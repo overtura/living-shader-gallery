@@ -3,36 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-
-const scenes = [
-  {
-    id: 'aurora',
-    name: '오로라 코어',
-    summary: '시간에 따라 표면이 흔들리는 청록 스펙트럼 레이어',
-    accent: '#007f9e',
-  },
-  {
-    id: 'ember',
-    name: '엠버 필드',
-    summary: '입자 굴절과 따뜻한 bloom을 실험하는 장면',
-    accent: '#e66f2e',
-  },
-  {
-    id: 'violet',
-    name: '바이올렛 페이즈',
-    summary: '윤곽, 림라이트, 대비를 조정하는 장면',
-    accent: '#6f57d8',
-  },
-] as const
-
-type Scene = (typeof scenes)[number]
-type SceneId = (typeof scenes)[number]['id']
-
-const defaultScene = scenes[0]
-
-function getSceneById(sceneId: SceneId): Scene {
-  return scenes.find((scene) => scene.id === sceneId) ?? defaultScene
-}
+import { DEFAULT_SCENE_ID, SCENES, getSceneById, type Scene, type SceneId } from './scenes'
 
 function ShaderCore({ scene }: { scene: Scene }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
@@ -101,7 +72,7 @@ function ShaderCore({ scene }: { scene: Scene }) {
 }
 
 export default function App() {
-  const [sceneId, setSceneId] = useState<SceneId>('aurora')
+  const [sceneId, setSceneId] = useState<SceneId>(DEFAULT_SCENE_ID)
   const activeScene = getSceneById(sceneId)
 
   return (
@@ -115,7 +86,7 @@ export default function App() {
             검증 가능한 PR 제안으로 이어가도록 준비한 저장소입니다.
           </p>
           <div className="actions" role="group" aria-label="장면 선택">
-            {scenes.map((scene) => (
+            {SCENES.map((scene) => (
               <button
                 key={scene.id}
                 type="button"
