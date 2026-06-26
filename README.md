@@ -23,6 +23,8 @@ pnpm dev
 pnpm check
 ```
 
+`pnpm check`는 lint, typecheck, vitest, production build를 순서대로 실행한다. 시각 변경 PR은 이 명령 통과와 함께 desktop/mobile에서 3D canvas가 비어 있지 않은지도 확인한다.
+
 ## 자가 개선
 이 저장소에는 자가 개선 엔진을 두지 않는다. 중앙 control plane인 `okorion/self-improving-maintainer-bot`이 `profiles/overtura/living-shader-gallery.json` profile로 이 저장소를 target repo로 다룬다.
 
