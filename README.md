@@ -25,6 +25,20 @@ pnpm check
 
 `pnpm check`는 lint, typecheck, vitest, production build를 순서대로 실행한다. 시각 변경 PR은 이 명령 통과와 함께 desktop/mobile에서 3D canvas가 비어 있지 않은지도 확인한다.
 
+## Vercel 배포
+- 배포 설정: `vercel.json`
+- framework: Vite
+- build command: `pnpm build`
+- output directory: `dist`
+- production deploy: Vercel CLI 로그인 또는 `VERCEL_TOKEN` 설정 후 `npx vercel --prod --yes`
+
+현재 저장소는 Vercel 정적 배포 설정까지 준비되어 있다. 이 Codex 실행 환경에서는 Vercel CLI/커넥터 인증이 확인되지 않아 production URL 발급은 인증 후 진행한다.
+
+## 최근 업데이트
+- 밝은 톤 디자인 시스템과 `src/design-system/base.css` 기준을 적용했다.
+- 셰이더 장면 선택과 시각 표현을 작은 PR 단위로 개선하는 자가 개선 루프를 검증했다.
+- 중앙 maintainer bot은 레포별 profile, 최근 PR 이력, 전후 캡처 정책을 기준으로 독립적인 개선 후보를 찾는다.
+
 ## 자가 개선
 이 저장소에는 자가 개선 엔진을 두지 않는다. 중앙 control plane인 `okorion/self-improving-maintainer-bot`이 `profiles/overtura/living-shader-gallery.json` profile로 이 저장소를 target repo로 다룬다.
 
