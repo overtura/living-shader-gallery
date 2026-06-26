@@ -4,4 +4,5 @@
 # R3/policy surface는 owner review가 필요합니다.
 .github/workflows/** @okorion
 CODEOWNERS @okorion
+.github/CODEOWNERS @okorion
 maintainer-bot/project.json @okorion
