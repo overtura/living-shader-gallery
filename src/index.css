@@ -77,6 +77,7 @@ h1 {
 }
 
 .actions button {
+  --scene-accent: var(--color-primary);
   min-height: 42px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
@@ -95,15 +96,72 @@ h1 {
   transform: translateY(-1px);
 }
 
+.actions button:focus-visible {
+  outline: 3px solid rgb(0 127 158 / 22%);
+  outline-offset: 3px;
+}
+
 .actions button.active {
   color: var(--color-primary-ink);
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--scene-accent);
+  border-color: var(--scene-accent);
+}
+
+.selected-panel {
+  margin-top: 18px;
 }
 
 .selected {
-  margin-top: 18px;
+  margin: 0;
   color: var(--color-subtle);
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.scene-notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.scene-notes div {
+  min-height: 58px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.scene-notes dt {
+  margin: 0 0 5px;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.scene-notes dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.palette-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-swatch {
+  --scene-accent: var(--color-primary);
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: var(--scene-accent);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
 }
 
 .stage {
@@ -142,5 +200,11 @@ h1 {
   .stage {
     min-height: 360px;
     height: 54vh;
+  }
+}
+
+@media (max-width: 560px) {
+  .scene-notes {
+    grid-template-columns: 1fr;
   }
 }
