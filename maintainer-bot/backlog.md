@@ -7,6 +7,11 @@
 - 자동 merge 기본값은 꺼져 있다.
 - `.github/workflows/**`, credential, auth/security, infra, migration 변경은 R3로 취급하고 draft/proposal only로 다룬다.
 
+## 문서 QA 기준
+- 프로젝트 설명은 `Living Shader Gallery` 이름과 React Three Fiber 기반 3D 갤러리 목적을 분명히 포함한다.
+- 기본 검증 명령은 `pnpm check`로 안내한다.
+- workflow 변경은 항상 R3 proposal-only 대상으로 설명한다.
+
 ## R0 Report
 - 장면 추가 기준과 shader parameter naming 규칙의 누락을 분석 리포트로 정리한다.
 - Three.js bundle 크기 경고와 code splitting 후보를 리포트로 정리한다.
