@@ -1,20 +1,20 @@
 :root {
   --font-ui: Inter, Pretendard, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
-  --color-bg: #050712;
-  --color-bg-rgb: 5 7 18;
-  --color-text: #eef6ff;
-  --color-muted: #a7b7c9;
-  --color-subtle: #c8d7e8;
-  --color-border: rgb(238 246 255 / 14%);
-  --color-border-strong: rgb(238 246 255 / 22%);
-  --color-surface: rgb(255 255 255 / 7%);
-  --color-surface-strong: rgb(255 255 255 / 11%);
-  --color-primary: #8cecff;
-  --color-primary-ink: #031018;
-  --color-accent: #b56cff;
-  --color-warm: #ff8a3d;
-  --shadow-stage: 0 28px 90px rgb(0 0 0 / 45%);
+  --color-bg: #f7fbff;
+  --color-bg-rgb: 247 251 255;
+  --color-text: #102033;
+  --color-muted: #536476;
+  --color-subtle: #31465c;
+  --color-border: rgb(22 63 91 / 14%);
+  --color-border-strong: rgb(0 127 158 / 24%);
+  --color-surface: rgb(255 255 255 / 78%);
+  --color-surface-strong: rgb(255 255 255 / 94%);
+  --color-primary: #007f9e;
+  --color-primary-ink: #ffffff;
+  --color-accent: #6f57d8;
+  --color-warm: #e66f2e;
+  --shadow-stage: 0 26px 80px rgb(51 85 120 / 18%);
   --radius-frame: 8px;
   --radius-pill: 999px;
   --space-shell: clamp(20px, 5vw, 64px);

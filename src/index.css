@@ -6,7 +6,7 @@
   background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -27,9 +27,9 @@ button {
   min-height: 100vh;
   padding: var(--space-shell);
   background:
-    radial-gradient(circle at 20% 10%, rgba(77, 247, 255, 0.22), transparent 32%),
-    radial-gradient(circle at 80% 80%, rgba(181, 108, 255, 0.18), transparent 34%),
-    var(--color-bg);
+    radial-gradient(circle at 16% 8%, rgb(0 143 173 / 14%), transparent 32%),
+    radial-gradient(circle at 82% 78%, rgb(111 87 216 / 10%), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, var(--color-bg) 54%, #eef7ff 100%);
 }
 
 .hero {
@@ -48,14 +48,16 @@ button {
   margin: 0 0 18px;
   color: var(--color-primary);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 h1 {
   margin: 0;
-  font-size: clamp(44px, 8vw, 92px);
-  line-height: 0.95;
+  font-size: clamp(40px, 6.2vw, 76px);
+  line-height: 1.03;
   letter-spacing: 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .lead {
@@ -63,6 +65,8 @@ h1 {
   color: var(--color-muted);
   font-size: 18px;
   line-height: 1.75;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .actions {
@@ -78,12 +82,17 @@ h1 {
   border-radius: var(--radius-pill);
   padding: 0 16px;
   color: var(--color-text);
-  background: var(--color-surface);
+  background: var(--color-surface-strong);
   cursor: pointer;
   transition:
     border-color var(--motion-standard),
     background var(--motion-standard),
-    color var(--motion-standard);
+    color var(--motion-standard),
+    transform var(--motion-standard);
+}
+
+.actions button:hover {
+  transform: translateY(-1px);
 }
 
 .actions button.active {
@@ -103,7 +112,9 @@ h1 {
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-frame);
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at 50% 42%, rgb(0 127 158 / 12%), transparent 34%),
+    linear-gradient(180deg, #ffffff, #eef8ff);
   box-shadow: var(--shadow-stage);
 }
 
@@ -116,7 +127,8 @@ h1 {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
   color: var(--color-text);
-  background: rgb(var(--color-bg-rgb) / 72%);
+  background: rgb(var(--color-bg-rgb) / 86%);
+  box-shadow: 0 12px 30px rgb(51 85 120 / 14%);
   font-size: 13px;
   white-space: nowrap;
   backdrop-filter: blur(12px);
