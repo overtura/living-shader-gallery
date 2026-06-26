@@ -31,6 +31,11 @@ pnpm self-improve:guard
 
 GitHub Actions의 `Self Improve` workflow는 GitHub Models를 사용해 작은 diff를 만들고, 민감 정보 guard와 `pnpm check`를 통과하면 `self-improve`, `automerge` 라벨 PR을 생성한 뒤 자동 squash merge한다.
 
+## 디자인 시스템
+- 기준 문서: `DESIGN.md`
+- 실행 토큰: `src/design-system/base.css`
+- 참고 기록: `docs/design/`
+
 ## 범위 밖
 - 실제 API key나 배포 secret 저장
 - 장기 운영용 대형 scene editor

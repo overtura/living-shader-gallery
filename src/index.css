@@ -1,11 +1,12 @@
+@import './design-system/base.css';
+
 :root {
-  font-family:
-    Inter, Pretendard, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  color: #eef6ff;
-  background: #050712;
+  font-family: var(--font-ui);
+  color: var(--color-text);
+  background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  color-scheme: dark;
 }
 
 * {
@@ -24,17 +25,18 @@ button {
 
 .shell {
   min-height: 100vh;
-  padding: clamp(20px, 5vw, 64px);
+  padding: var(--space-shell);
   background:
     radial-gradient(circle at 20% 10%, rgba(77, 247, 255, 0.22), transparent 32%),
-    radial-gradient(circle at 80% 80%, rgba(181, 108, 255, 0.18), transparent 34%), #050712;
+    radial-gradient(circle at 80% 80%, rgba(181, 108, 255, 0.18), transparent 34%),
+    var(--color-bg);
 }
 
 .hero {
-  min-height: calc(100vh - clamp(40px, 10vw, 128px));
+  min-height: calc(100vh - (var(--space-shell) * 2));
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(360px, 1.15fr);
-  gap: clamp(24px, 5vw, 72px);
+  gap: var(--space-section);
   align-items: center;
 }
 
@@ -44,7 +46,7 @@ button {
 
 .kicker {
   margin: 0 0 18px;
-  color: #8cecff;
+  color: var(--color-primary);
   font-size: 14px;
   font-weight: 700;
 }
@@ -58,7 +60,7 @@ h1 {
 
 .lead {
   margin: 24px 0 0;
-  color: #a7b7c9;
+  color: var(--color-muted);
   font-size: 18px;
   line-height: 1.75;
 }
@@ -72,33 +74,37 @@ h1 {
 
 .actions button {
   min-height: 42px;
-  border: 1px solid rgba(238, 246, 255, 0.18);
-  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
   padding: 0 16px;
-  color: #d9e9ff;
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-text);
+  background: var(--color-surface);
   cursor: pointer;
+  transition:
+    border-color var(--motion-standard),
+    background var(--motion-standard),
+    color var(--motion-standard);
 }
 
 .actions button.active {
-  color: #031018;
-  background: #8cecff;
-  border-color: #8cecff;
+  color: var(--color-primary-ink);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .selected {
   margin-top: 18px;
-  color: #c8d7e8;
+  color: var(--color-subtle);
 }
 
 .stage {
   height: min(72vh, 760px);
   min-height: 420px;
   overflow: hidden;
-  border: 1px solid rgba(238, 246, 255, 0.14);
-  border-radius: 8px;
-  background: #050712;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-frame);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-stage);
 }
 
 .scene-tag {
@@ -107,10 +113,10 @@ h1 {
   min-width: 120px;
   min-height: 32px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  color: #eef6ff;
-  background: rgba(5, 7, 18, 0.72);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: rgb(var(--color-bg-rgb) / 72%);
   font-size: 13px;
   white-space: nowrap;
   backdrop-filter: blur(12px);
