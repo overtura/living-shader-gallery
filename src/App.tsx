@@ -1,4 +1,4 @@
-import { Environment, Float, Html, OrbitControls } from '@react-three/drei'
+import { Float, Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { useMemo, useRef, useState } from 'react'
@@ -25,26 +25,32 @@ const scenes = [
   },
 ] as const
 
+type Scene = (typeof scenes)[number]
 type SceneId = (typeof scenes)[number]['id']
 
-function ShaderCore({ sceneId }: { sceneId: SceneId }) {
+const defaultScene = scenes[0]
+
+function getSceneById(sceneId: SceneId): Scene {
+  return scenes.find((scene) => scene.id === sceneId) ?? defaultScene
+}
+
+function ShaderCore({ scene }: { scene: Scene }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const groupRef = useRef<THREE.Group>(null)
-  const active = scenes.find((scene) => scene.id === sceneId) ?? scenes[0]
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uAccent: { value: new THREE.Color(active.accent) },
+      uAccent: { value: new THREE.Color(scene.accent) },
     }),
-    [active.accent],
+    [scene.accent],
   )
 
   useFrame(({ clock }) => {
     const time = clock.getElapsedTime()
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = time
-      materialRef.current.uniforms.uAccent.value.set(active.accent)
+      materialRef.current.uniforms.uAccent.value.set(scene.accent)
     }
     if (groupRef.current) {
       groupRef.current.rotation.y = time * 0.18
@@ -88,7 +94,7 @@ function ShaderCore({ sceneId }: { sceneId: SceneId }) {
         </mesh>
       </Float>
       <Html position={[0, -2.25, 0]} center>
-        <span className="scene-tag">{active.name}</span>
+        <span className="scene-tag">{scene.name}</span>
       </Html>
     </group>
   )
@@ -96,7 +102,7 @@ function ShaderCore({ sceneId }: { sceneId: SceneId }) {
 
 export default function App() {
   const [sceneId, setSceneId] = useState<SceneId>('aurora')
-  const active = scenes.find((scene) => scene.id === sceneId) ?? scenes[0]
+  const activeScene = getSceneById(sceneId)
 
   return (
     <main className="shell">
@@ -120,17 +126,16 @@ export default function App() {
               </button>
             ))}
           </div>
-          <p className="selected">현재 장면: {active.summary}</p>
+          <p className="selected">현재 장면: {activeScene.summary}</p>
         </div>
-        <div className="stage" aria-label={`${active.name} 3D 미리보기`}>
+        <div className="stage" aria-label={`${activeScene.name} 3D 미리보기`}>
           <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
             <color attach="background" args={['#f7fbff']} />
             <ambientLight intensity={0.95} />
             <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
-            <pointLight position={[3, 4, 5]} intensity={12} color={active.accent} />
-            <ShaderCore sceneId={sceneId} />
+            <pointLight position={[3, 4, 5]} intensity={12} color={activeScene.accent} />
+            <ShaderCore scene={activeScene} />
             <OrbitControls enablePan={false} minDistance={3.5} maxDistance={7} />
-            <Environment preset="city" />
             <EffectComposer>
               <Bloom intensity={0.38} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
               <Vignette eskil={false} offset={0.46} darkness={0.16} />
