@@ -1,0 +1,7 @@
+# 중앙 maintainer bot 대상 저장소의 기본 ownership입니다.
+* @okorion
+
+# R3/policy surface는 owner review가 필요합니다.
+.github/workflows/** @okorion
+CODEOWNERS @okorion
+maintainer-bot/project.json @okorion
