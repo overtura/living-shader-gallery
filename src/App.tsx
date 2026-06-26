@@ -106,7 +106,7 @@ export default function App() {
           <h1 id="page-title">살아 있는 비주얼 실험을 자동 PR로 진화시킵니다.</h1>
           <p className="lead">
             React Three Fiber 장면을 직접 눌러 보고, self-improving bot이 셰이더와 시각 품질 개선을
-            제안부터 PR, merge까지 자동으로 이어가도록 준비한 저장소입니다.
+            검증 가능한 PR 제안으로 이어가도록 준비한 저장소입니다.
           </p>
           <div className="actions" role="group" aria-label="장면 선택">
             {scenes.map((scene) => (
