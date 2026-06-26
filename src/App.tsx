@@ -4,7 +4,7 @@ import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-const scenes = [
+const SCENES = [
   {
     id: 'aurora',
     name: '오로라 코어',
@@ -25,13 +25,35 @@ const scenes = [
   },
 ] as const
 
-type Scene = (typeof scenes)[number]
-type SceneId = (typeof scenes)[number]['id']
+type Scene = (typeof SCENES)[number]
+type SceneId = Scene['id']
 
-const defaultScene = scenes[0]
+const DEFAULT_SCENE = SCENES[0]
 
 function getSceneById(sceneId: SceneId): Scene {
-  return scenes.find((scene) => scene.id === sceneId) ?? defaultScene
+  return SCENES.find((scene) => scene.id === sceneId) ?? DEFAULT_SCENE
+}
+
+type SceneSelectorProps = {
+  selectedSceneId: SceneId
+  onSelectScene: (sceneId: SceneId) => void
+}
+
+function SceneSelector({ selectedSceneId, onSelectScene }: SceneSelectorProps) {
+  return (
+    <div className="actions" role="group" aria-label="장면 선택">
+      {SCENES.map((scene) => (
+        <button
+          key={scene.id}
+          type="button"
+          className={scene.id === selectedSceneId ? 'active' : ''}
+          onClick={() => onSelectScene(scene.id)}
+        >
+          {scene.name}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function ShaderCore({ scene }: { scene: Scene }) {
@@ -101,7 +123,7 @@ function ShaderCore({ scene }: { scene: Scene }) {
 }
 
 export default function App() {
-  const [sceneId, setSceneId] = useState<SceneId>('aurora')
+  const [sceneId, setSceneId] = useState<SceneId>(DEFAULT_SCENE.id)
   const activeScene = getSceneById(sceneId)
 
   return (
@@ -114,18 +136,7 @@ export default function App() {
             React Three Fiber 장면을 직접 눌러 보고, self-improving bot이 셰이더와 시각 품질 개선을
             검증 가능한 PR 제안으로 이어가도록 준비한 저장소입니다.
           </p>
-          <div className="actions" role="group" aria-label="장면 선택">
-            {scenes.map((scene) => (
-              <button
-                key={scene.id}
-                type="button"
-                className={scene.id === sceneId ? 'active' : ''}
-                onClick={() => setSceneId(scene.id)}
-              >
-                {scene.name}
-              </button>
-            ))}
-          </div>
+          <SceneSelector selectedSceneId={sceneId} onSelectScene={setSceneId} />
           <p className="selected">현재 장면: {activeScene.summary}</p>
         </div>
         <div className="stage" aria-label={`${activeScene.name} 3D 미리보기`}>
