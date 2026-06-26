@@ -9,6 +9,11 @@
 - `pnpm check`가 통과하면 `self-improve`, `automerge` 라벨이 붙은 PR을 만든다.
 - `auto_merge=true`일 때 PR은 squash merge까지 자동으로 진행된다.
 
+## 필수 GitHub 설정
+- 조직 또는 저장소의 Actions workflow permissions가 `read/write`여야 한다.
+- `GITHUB_TOKEN`이 `contents: write`, `pull-requests: write`, `issues: write`, `models: read` 권한을 받을 수 있어야 한다.
+- GitHub Models 사용이 조직/저장소에서 허용되어야 한다.
+
 ## 허용 범위
 - 기능, 시각 개선, 문서, 접근성, 성능, workflow 개선 PR
 - 한국어 문구 보강과 README/운영 문서 개선

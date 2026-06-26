@@ -65,6 +65,16 @@ jobs:
           corepack enable
           pnpm install --frozen-lockfile || pnpm install
 
+      - name: Verify workflow write permission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          permission="$(gh api "repos/${GITHUB_REPOSITORY}/actions/permissions/workflow" --jq .default_workflow_permissions)"
+          if [ "$permission" != "write" ]; then
+            echo "::error::이 조직은 GitHub Actions GITHUB_TOKEN write 권한을 막고 있습니다. overtura org Actions workflow permissions를 read/write로 변경해야 자동 PR/merge가 동작합니다."
+            exit 1
+          fi
+
       - name: Build self-improvement context
         run: pnpm self-improve:context
 
