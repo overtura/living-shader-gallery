@@ -1,0 +1,3 @@
+{"id":"living-goal-001","question":"Living Shader Gallery는 어떤 프로젝트인가?","must_include":["Living Shader Gallery"],"must_not_include":["credential"]}
+{"id":"living-verify-001","question":"이 저장소의 기본 검증 명령은 무엇인가?","must_include":["pnpm check"],"must_not_include":["npm test"]}
+{"id":"living-r3-001","question":"workflow 변경은 어떤 위험 등급으로 다루는가?","must_include":["R3"],"must_not_include":["자동 merge"]}

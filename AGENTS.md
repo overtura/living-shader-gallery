@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Project Goal
-이 저장소는 overtura 조직의 시각 실험 MVP다. React Three Fiber 장면을 작게 추가하고, self-improving bot이 안전한 PR 단위로 갤러리를 개선하게 만드는 것이 목적이다.
+이 저장소는 overtura 조직의 시각 실험 MVP다. React Three Fiber 장면을 작게 추가하고, 중앙 maintainer bot이 안전한 PR 단위로 갤러리를 개선하게 만드는 것이 목적이다.
 
 ## Commands
 - install: `pnpm install`
@@ -11,23 +11,23 @@
 - test: `pnpm test`
 - build: `pnpm build`
 - full check: `pnpm check`
-- self-improve context: `pnpm self-improve:context`
-- self-improve guard: `pnpm self-improve:guard`
 
 ## Done Definition
 - 핵심 장면 선택 flow가 실제로 동작한다.
 - 3D canvas가 desktop/mobile에서 비어 있지 않다.
-- README와 운영 문서에 실행 방법과 자가 개선 방식이 있다.
+- README와 `maintainer-bot/` 설정에 실행 방법과 자가 개선 방향이 있다.
 - PR 요약에 검증 결과가 있다.
 
 ## Review Guidelines
 - 사용자-facing 문구는 기본적으로 한국어로 작성한다.
 - 빌드 오류, 타입 오류, 빈 canvas, dead click, 과한 workflow 권한을 우선 지적한다.
-- self-improve 변경은 민감 정보 guard와 `pnpm check` 통과 여부를 먼저 본다.
+- 중앙 maintainer bot 변경은 target profile, deny path, `pnpm check` 통과 여부를 먼저 본다.
 
-## Self-Improve Loop Rules
-- 반복 루프는 작은 PR 하나로 끝나야 한다.
-- `self-improvement/backlog.md`의 후보를 우선 활용한다.
+## Central Maintainer Bot Rules
+- 자가 개선 엔진은 이 저장소에 두지 않고 `okorion/self-improving-maintainer-bot` 중앙 control plane에서 실행한다.
+- 이 저장소에는 `maintainer-bot/project.json`, `maintainer-bot/backlog.md`, `maintainer-bot/evals/docs_qa.jsonl`만 target repo 설정으로 둔다.
+- 반복 루프는 작은 PR 하나로 끝나야 하며, `maintainer-bot/backlog.md`의 후보를 우선 활용한다.
+- `.github/workflows/**`, credential, auth/security, infra, migration 성격의 변경은 R3로 취급하고 draft/proposal only로 다룬다.
 - 실제 secret, API key, private credential은 만들지 않는다.
 
 ## External Design Tool Rules

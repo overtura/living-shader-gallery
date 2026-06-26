@@ -1,7 +1,7 @@
 # DESIGN.md - Living Shader Gallery
 
 ## Product Intent
-React Three Fiber 기반의 self-improving 셰이더 갤러리다. 사용자는 장면을 선택하고 3D 캔버스를 직접 회전하며 셰이더, 후처리, 색상 반응을 빠르게 판단한다.
+React Three Fiber 기반의 중앙 maintainer bot 대상 셰이더 갤러리다. 사용자는 장면을 선택하고 3D 캔버스를 직접 회전하며 셰이더, 후처리, 색상 반응을 빠르게 판단한다.
 
 ## Design Authority
 우선순위는 이 문서, CSS semantic token, 컴포넌트 규약, 외부 디자인 도구와 레퍼런스 순서다. 외부 브랜드의 고유한 로고, 서체, 구성은 복제하지 않는다.
@@ -46,7 +46,7 @@ Select scene -> Inspect motion -> Rotate canvas -> Propose visual PR
 
 - 장면 선택은 즉시 canvas 내 조명과 색을 바꾼다.
 - Orbit interaction은 canvas 안에서만 동작한다.
-- self-improve 변경은 scene, token tuning, 접근성, 성능 개선 단위로 작게 제안한다.
+- 중앙 maintainer bot 변경은 scene, token tuning, 접근성, 성능 개선 단위로 작게 제안한다.
 
 ## Responsive Rules
 - 900px 이하에서는 copy와 canvas를 세로로 쌓는다.

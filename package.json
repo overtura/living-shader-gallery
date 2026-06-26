@@ -11,10 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run --passWithNoTests",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "self-improve:context": "node scripts/self-improve-context.mjs",
-    "self-improve:guard": "node scripts/self-improve-guard.mjs",
-    "self-improve:apply": "node scripts/apply-ai-patch.mjs"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.0",

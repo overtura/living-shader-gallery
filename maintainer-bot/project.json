@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "controlPlane": "okorion/self-improving-maintainer-bot",
+  "name": "Living Shader Gallery",
+  "kind": "interactive-3d-gallery",
+  "runtime": "React + Vite + React Three Fiber",
+  "language": "ko",
+  "goal": "셰이더와 3D 후처리 장면을 밝은 갤러리 형태로 축적하고, 중앙 maintainer bot이 PR 단위로 장면 품질과 접근성을 안전하게 개선한다.",
+  "automation": {
+    "defaultRiskLevel": "R1",
+    "maxAutoMergeRiskLevel": "R1",
+    "r3Mode": "draft_or_proposal_only",
+    "autoMerge": false,
+    "verifyCommands": [
+      "pnpm install --frozen-lockfile || pnpm install",
+      "pnpm check"
+    ],
+    "allowPaths": [
+      "README.md",
+      "DESIGN.md",
+      "docs/**",
+      "maintainer-bot/**",
+      "src/**"
+    ],
+    "denyPaths": [
+      ".github/workflows/**",
+      "CODEOWNERS",
+      ".env*",
+      ".npmrc",
+      "infra/**",
+      "terraform/**",
+      "k8s/**",
+      "migrations/**",
+      "**/auth/**",
+      "**/security/**",
+      "*.pem",
+      "*.key"
+    ],
+    "maxFiles": 12,
+    "maxLines": 300
+  }
+}
