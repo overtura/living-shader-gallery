@@ -7,6 +7,10 @@
 - 자동 merge 기본값은 꺼져 있다.
 - `.github/workflows/**`, credential, auth/security, infra, migration 변경은 R3로 취급하고 draft/proposal only로 다룬다.
 
+## 문서 eval 통과 시
+- 실패한 eval case가 없으면 기능 코드 변경 대신 no-op 또는 작은 문서 정리만 수행한다.
+- 새 eval case는 같은 혼선이나 누락이 반복될 때만 추가한다.
+
 ## R0 Report
 - 장면 추가 기준과 shader parameter naming 규칙의 누락을 분석 리포트로 정리한다.
 - Three.js bundle 크기 경고와 code splitting 후보를 리포트로 정리한다.
