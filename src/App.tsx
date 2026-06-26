@@ -1,24 +1,141 @@
-const items = [
-  'README에서 프로젝트 소개를 바꾼다.',
-  '핵심 happy path를 먼저 구현한다.',
-  '실패/빈 상태를 최소 1개 처리한다.',
-  '마지막에 pnpm check를 실행한다.',
-]
+import { Environment, Float, Html, OrbitControls } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
+import { useMemo, useRef, useState } from 'react'
+import * as THREE from 'three'
+
+const scenes = [
+  {
+    id: 'aurora',
+    name: '오로라 코어',
+    summary: '시간에 따라 표면이 흔들리는 발광 셰이더',
+    accent: '#4df7ff',
+  },
+  {
+    id: 'ember',
+    name: '엠버 필드',
+    summary: '입자 군집과 따뜻한 bloom을 실험하는 장면',
+    accent: '#ff8a3d',
+  },
+  {
+    id: 'violet',
+    name: '바이올렛 렌즈',
+    summary: '유리 재질, 림라이트, 대비를 조정하는 장면',
+    accent: '#b56cff',
+  },
+] as const
+
+type SceneId = (typeof scenes)[number]['id']
+
+function ShaderCore({ sceneId }: { sceneId: SceneId }) {
+  const materialRef = useRef<THREE.ShaderMaterial>(null)
+  const groupRef = useRef<THREE.Group>(null)
+  const active = scenes.find((scene) => scene.id === sceneId) ?? scenes[0]
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uAccent: { value: new THREE.Color(active.accent) },
+    }),
+    [active.accent],
+  )
+
+  useFrame(({ clock }) => {
+    const time = clock.getElapsedTime()
+    if (materialRef.current) {
+      materialRef.current.uniforms.uTime.value = time
+      materialRef.current.uniforms.uAccent.value.set(active.accent)
+    }
+    if (groupRef.current) {
+      groupRef.current.rotation.y = time * 0.18
+      groupRef.current.rotation.x = Math.sin(time * 0.35) * 0.12
+    }
+  })
+
+  return (
+    <group ref={groupRef}>
+      <Float speed={1.4} rotationIntensity={0.5} floatIntensity={0.8}>
+        <mesh>
+          <icosahedronGeometry args={[1.7, 48]} />
+          <shaderMaterial
+            ref={materialRef}
+            uniforms={uniforms}
+            vertexShader={`
+              varying vec3 vNormal;
+              varying vec3 vPosition;
+              uniform float uTime;
+              void main() {
+                vNormal = normal;
+                vPosition = position;
+                vec3 warped = position + normal * sin(position.y * 5.0 + uTime * 1.6) * 0.09;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(warped, 1.0);
+              }
+            `}
+            fragmentShader={`
+              varying vec3 vNormal;
+              varying vec3 vPosition;
+              uniform float uTime;
+              uniform vec3 uAccent;
+              void main() {
+                float rim = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 2.0);
+                float pulse = 0.55 + 0.45 * sin(uTime * 2.0 + vPosition.y * 4.0);
+                vec3 deep = vec3(0.02, 0.05, 0.12);
+                vec3 color = mix(deep, uAccent, rim + pulse * 0.35);
+                gl_FragColor = vec4(color, 1.0);
+              }
+            `}
+          />
+        </mesh>
+      </Float>
+      <Html position={[0, -2.25, 0]} center>
+        <span className="scene-tag">{active.name}</span>
+      </Html>
+    </group>
+  )
+}
 
 export default function App() {
+  const [sceneId, setSceneId] = useState<SceneId>('aurora')
+  const active = scenes.find((scene) => scene.id === sceneId) ?? scenes[0]
+
   return (
-    <main className="page">
-      <section className="card">
-        <p className="eyebrow">overtura starter</p>
-        <h1>PROJECT_NAME</h1>
-        <p className="lead">
-          이 화면은 새 프로젝트를 시작할 때 가장 먼저 교체할 placeholder다.
-        </p>
-        <ul>
-          {items.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
+    <main className="shell">
+      <section className="hero" aria-labelledby="page-title">
+        <div className="copy">
+          <p className="kicker">자가 개선형 셰이더 갤러리</p>
+          <h1 id="page-title">살아있는 비주얼 실험장을 자동 PR로 진화시킵니다.</h1>
+          <p className="lead">
+            React Three Fiber 장면을 작게 나누고, self-improving bot이 새 셰이더와 시각 회귀 개선을
+            제안해 PR부터 merge까지 자동으로 이어가도록 준비한 저장소입니다.
+          </p>
+          <div className="actions" role="group" aria-label="장면 선택">
+            {scenes.map((scene) => (
+              <button
+                key={scene.id}
+                type="button"
+                className={scene.id === sceneId ? 'active' : ''}
+                onClick={() => setSceneId(scene.id)}
+              >
+                {scene.name}
+              </button>
+            ))}
+          </div>
+          <p className="selected">현재 장면: {active.summary}</p>
+        </div>
+        <div className="stage" aria-label={`${active.name} 3D 미리보기`}>
+          <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+            <color attach="background" args={['#050712']} />
+            <ambientLight intensity={0.45} />
+            <pointLight position={[3, 4, 5]} intensity={18} color={active.accent} />
+            <ShaderCore sceneId={sceneId} />
+            <OrbitControls enablePan={false} minDistance={3.5} maxDistance={7} />
+            <Environment preset="night" />
+            <EffectComposer>
+              <Bloom intensity={0.9} luminanceThreshold={0.18} luminanceSmoothing={0.25} />
+              <Vignette eskil={false} offset={0.2} darkness={0.8} />
+            </EffectComposer>
+          </Canvas>
+        </div>
       </section>
     </main>
   )

@@ -1,0 +1,156 @@
+name: Self Improve
+
+on:
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: "이번 자가 개선 초점"
+        required: true
+        default: visual
+        type: choice
+        options:
+          - feature
+          - visual
+          - workflow
+          - docs
+          - accessibility
+          - performance
+      model:
+        description: "GitHub Models 모델 ID"
+        required: true
+        default: openai/gpt-4o
+      auto_merge:
+        description: "guard/check 통과 후 PR을 자동 머지"
+        required: true
+        default: true
+        type: boolean
+  schedule:
+    - cron: "17 18 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  models: read
+
+concurrency:
+  group: self-improve-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  improve:
+    name: 자가 개선 PR 생성 및 자동 머지
+    runs-on: ubuntu-latest
+    env:
+      SELF_IMPROVE_FOCUS: ${{ github.event.inputs.focus || 'visual' }}
+      SELF_IMPROVE_MODEL: ${{ github.event.inputs.model || 'openai/gpt-4o' }}
+      SELF_IMPROVE_AUTO_MERGE: ${{ github.event.inputs.auto_merge || 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile || pnpm install
+
+      - name: Build self-improvement context
+        run: pnpm self-improve:context
+
+      - name: Ask GitHub Models for a safe patch
+        id: inference
+        uses: actions/ai-inference@v1
+        with:
+          model: ${{ env.SELF_IMPROVE_MODEL }}
+          system-prompt-file: .github/prompts/self-improve-system.md
+          prompt-file: .self-improvement/prompt.md
+          max-completion-tokens: 6000
+
+      - name: Apply AI patch
+        run: node scripts/apply-ai-patch.mjs "${{ steps.inference.outputs.response-file }}"
+
+      - name: Guard generated changes
+        run: pnpm self-improve:guard
+
+      - name: Check
+        run: pnpm check
+
+      - name: Detect changes
+        id: diff
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare labels
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create self-improve --color 5319e7 --description "자가 개선 자동화가 생성한 PR" || true
+          gh label create automerge --color 0e8a16 --description "guard/check 통과 시 자동 머지 대상" || true
+
+      - name: Create PR and merge
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch="self-improve/${SELF_IMPROVE_FOCUS}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영"
+          git push --set-upstream origin "$branch"
+          cat > .self-improvement/pr-body.md <<BODY
+          ## 목적
+          - 자가 개선 봇이 \`${SELF_IMPROVE_FOCUS}\` 초점으로 생성한 변경을 반영합니다.
+
+          ## 사용자 관점 변경점
+          - 자동 생성 패치는 비밀 정보 검사, workflow 위험 패턴 검사, \`pnpm check\`를 통과했습니다.
+
+          ## 구현 내용
+          - GitHub Models 응답에서 추출한 diff를 적용했습니다.
+          - guard가 민감 파일, secret 패턴, 위험한 workflow 권한 상승을 차단했습니다.
+
+          ## 검증 방법
+          - [x] self-improve guard
+          - [x] lint/typecheck/test/build 포함 \`pnpm check\`
+
+          ## 스크린샷 / 데모
+          - 필요 시 후속 visual PR에서 Actions artifact로 보강합니다.
+
+          ## 리스크 / 미완료
+          - GitHub Models 응답 품질에 따라 적용 가능한 diff가 없으면 PR을 만들지 않습니다.
+
+          ## 이번 PR에서 얻은 학습 포인트
+          - 자가 개선 루프가 guard/check 이후 자동 PR과 merge까지 수행합니다.
+
+          ## merge 판단
+          - recommend
+          BODY
+          pr_url="$(gh pr create --title "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영" --body-file .self-improvement/pr-body.md --label self-improve --label automerge)"
+          echo "Created $pr_url"
+          if [ "$SELF_IMPROVE_AUTO_MERGE" = "true" ]; then
+            gh pr merge "$pr_url" --squash --delete-branch --subject "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영" --body "self-improve guard와 pnpm check 통과 후 자동 머지"
+          fi
+
+      - name: No changes
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "적용 가능한 자가 개선 변경이 없어 종료합니다."

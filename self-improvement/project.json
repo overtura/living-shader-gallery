@@ -1,0 +1,23 @@
+{
+  "name": "Living Shader Gallery",
+  "kind": "interactive-3d-gallery",
+  "runtime": "React + Vite + React Three Fiber",
+  "goal": "셰이더와 3D 후처리 장면을 한국어 갤러리 형태로 축적하고, 자동 PR로 안전하게 개선한다.",
+  "allowedChangeScope": [
+    "src/**",
+    "README.md",
+    "docs/**",
+    ".github/workflows/**",
+    ".github/prompts/**",
+    "self-improvement/**",
+    "scripts/**",
+    "package.json"
+  ],
+  "blockedChangeScope": [
+    ".env*",
+    "*.pem",
+    "*.key",
+    ".npmrc",
+    "실제 API key 또는 credential"
+  ]
+}
