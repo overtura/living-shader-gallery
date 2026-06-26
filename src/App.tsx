@@ -71,8 +71,9 @@ const SCENES = [
 type Scene = (typeof SCENES)[number]
 type SceneId = Scene['id']
 type SceneForm = Scene['form']
-type SceneButtonStyle = CSSProperties & {
+type SceneColorStyle = CSSProperties & {
   '--scene-accent': string
+  '--scene-secondary'?: string
 }
 
 const DEFAULT_SCENE = SCENES[0]
@@ -94,7 +95,7 @@ function SceneSelector({ selectedSceneId, onSelectScene }: SceneSelectorProps) {
           key={scene.id}
           type="button"
           className={scene.id === selectedSceneId ? 'active' : ''}
-          style={{ '--scene-accent': scene.accent } as SceneButtonStyle}
+          style={{ '--scene-accent': scene.accent } as SceneColorStyle}
           aria-pressed={scene.id === selectedSceneId}
           onClick={() => onSelectScene(scene.id)}
         >
@@ -134,7 +135,7 @@ function SceneNotes({ scene }: { scene: Scene }) {
         <dd className="palette-value">
           <span
             className="palette-swatch"
-            style={{ '--scene-accent': scene.accent } as SceneButtonStyle}
+            style={{ '--scene-accent': scene.accent } as SceneColorStyle}
             aria-hidden="true"
           />
           {scene.palette}
@@ -217,7 +218,7 @@ function ShaderCore({ scene }: { scene: Scene }) {
           />
         </mesh>
       </Float>
-      <Html position={[0, -2.25, 0]} center>
+      <Html position={[0, -1.82, 0]} center>
         <span className="scene-tag">{scene.name}</span>
       </Html>
     </group>
@@ -239,12 +240,25 @@ export default function App() {
             검증 가능한 PR 제안으로 이어가도록 준비한 저장소입니다.
           </p>
           <SceneSelector selectedSceneId={sceneId} onSelectScene={setSceneId} />
-          <div className="selected-panel" aria-live="polite">
+          <div
+            className="selected-panel"
+            style={{ '--scene-accent': activeScene.accent } as SceneColorStyle}
+            aria-live="polite"
+          >
             <p className="selected">현재 장면: {activeScene.summary}</p>
             <SceneNotes scene={activeScene} />
           </div>
         </div>
-        <div className="stage" aria-label={`${activeScene.name} 3D 미리보기`}>
+        <div
+          className="stage"
+          style={
+            {
+              '--scene-accent': activeScene.accent,
+              '--scene-secondary': activeScene.secondary,
+            } as SceneColorStyle
+          }
+          aria-label={`${activeScene.name} 3D 미리보기`}
+        >
           <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
             <color attach="background" args={['#f7fbff']} />
             <ambientLight intensity={0.95} />
