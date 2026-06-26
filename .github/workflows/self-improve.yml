@@ -9,18 +9,24 @@ on:
         default: visual
         type: choice
         options:
+          - planning
           - feature
+          - design
           - visual
           - workflow
           - docs
           - accessibility
           - performance
+      instruction:
+        description: "이번 루프에 반영할 추가 지시사항"
+        required: false
+        default: ""
       model:
         description: "GitHub Models 모델 ID"
         required: true
         default: openai/gpt-4o
       auto_merge:
-        description: "guard/check 통과 후 PR을 자동 머지"
+        description: "guard/check 통과 후 PR 자동 squash merge"
         required: true
         default: true
         type: boolean
@@ -39,10 +45,11 @@ concurrency:
 
 jobs:
   improve:
-    name: 자가 개선 PR 생성 및 자동 머지
+    name: Create, verify, and merge self-improvement PR
     runs-on: ubuntu-latest
     env:
       SELF_IMPROVE_FOCUS: ${{ github.event.inputs.focus || 'visual' }}
+      SELF_IMPROVE_INSTRUCTION: ${{ github.event.inputs.instruction || '' }}
       SELF_IMPROVE_MODEL: ${{ github.event.inputs.model || 'openai/gpt-4o' }}
       SELF_IMPROVE_AUTO_MERGE: ${{ github.event.inputs.auto_merge || 'true' }}
     steps:
@@ -65,14 +72,21 @@ jobs:
           corepack enable
           pnpm install --frozen-lockfile || pnpm install
 
-      - name: Verify workflow write permission
+      - name: Verify repository automation permissions
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          permission="$(gh api "repos/${GITHUB_REPOSITORY}/actions/permissions/workflow" --jq .default_workflow_permissions)"
-          if [ "$permission" != "write" ]; then
-            echo "::error::이 조직은 GitHub Actions GITHUB_TOKEN write 권한을 막고 있습니다. overtura org Actions workflow permissions를 read/write로 변경해야 자동 PR/merge가 동작합니다."
+          set -euo pipefail
+          permissions="$(gh api "repos/${GITHUB_REPOSITORY}/actions/permissions/workflow")"
+          default_permission="$(jq -r .default_workflow_permissions <<<"$permissions")"
+          can_approve="$(jq -r .can_approve_pull_request_reviews <<<"$permissions")"
+          if [ "$default_permission" != "write" ]; then
+            echo "::error::Actions GITHUB_TOKEN write 권한이 필요합니다."
             exit 1
+          fi
+          if [ "$can_approve" != "true" ]; then
+            echo "::warning::Actions PR approval 권한이 꺼져 있습니다. 보호 규칙이 생기면 자동 merge가 막힐 수 있습니다."
           fi
 
       - name: Build self-improvement context
@@ -86,6 +100,7 @@ jobs:
           system-prompt-file: .github/prompts/self-improve-system.md
           prompt-file: .self-improvement/prompt.md
           max-completion-tokens: 6000
+          temperature: 0.2
 
       - name: Apply AI patch
         run: node scripts/apply-ai-patch.mjs "${{ steps.inference.outputs.response-file }}"
@@ -112,9 +127,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh label create self-improve --color 5319e7 --description "자가 개선 자동화가 생성한 PR" || true
-          gh label create automerge --color 0e8a16 --description "guard/check 통과 시 자동 머지 대상" || true
+          gh label create automerge --color 0e8a16 --description "guard/check 통과 후 자동 merge 대상" || true
 
-      - name: Create PR and merge
+      - name: Create PR and optionally merge
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,43 +137,37 @@ jobs:
         run: |
           set -euo pipefail
           branch="self-improve/${SELF_IMPROVE_FOCUS}-${GITHUB_RUN_ID}"
+          title="[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
           git add -A
-          git commit -m "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영"
+          git commit -m "$title"
           git push --set-upstream origin "$branch"
           cat > .self-improvement/pr-body.md <<BODY
           ## 목적
-          - 자가 개선 봇이 \`${SELF_IMPROVE_FOCUS}\` 초점으로 생성한 변경을 반영합니다.
+          자가 개선 루프가 \`${SELF_IMPROVE_FOCUS}\` 초점으로 생성한 변경을 반영합니다.
 
-          ## 사용자 관점 변경점
-          - 자동 생성 패치는 비밀 정보 검사, workflow 위험 패턴 검사, \`pnpm check\`를 통과했습니다.
+          ## 루프 입력
+          - focus: \`${SELF_IMPROVE_FOCUS}\`
+          - instruction: \`${SELF_IMPROVE_INSTRUCTION:-없음}\`
+          - model: \`${SELF_IMPROVE_MODEL}\`
 
-          ## 구현 내용
-          - GitHub Models 응답에서 추출한 diff를 적용했습니다.
-          - guard가 민감 파일, secret 패턴, 위험한 workflow 권한 상승을 차단했습니다.
-
-          ## 검증 방법
+          ## 검증
           - [x] self-improve guard
-          - [x] lint/typecheck/test/build 포함 \`pnpm check\`
+          - [x] \`pnpm check\`
 
-          ## 스크린샷 / 데모
-          - 필요 시 후속 visual PR에서 Actions artifact로 보강합니다.
-
-          ## 리스크 / 미완료
-          - GitHub Models 응답 품질에 따라 적용 가능한 diff가 없으면 PR을 만들지 않습니다.
-
-          ## 이번 PR에서 얻은 학습 포인트
-          - 자가 개선 루프가 guard/check 이후 자동 PR과 merge까지 수행합니다.
+          ## 안전 장치
+          - 민감 파일, secret 패턴, 위험 workflow 패턴을 guard에서 차단했습니다.
+          - 적용 가능한 unified diff가 없으면 PR을 만들지 않습니다.
 
           ## merge 판단
           - recommend
           BODY
-          pr_url="$(gh pr create --title "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영" --body-file .self-improvement/pr-body.md --label self-improve --label automerge)"
+          pr_url="$(gh pr create --title "$title" --body-file .self-improvement/pr-body.md --label self-improve --label automerge)"
           echo "Created $pr_url"
           if [ "$SELF_IMPROVE_AUTO_MERGE" = "true" ]; then
-            gh pr merge "$pr_url" --squash --delete-branch --subject "[feat] 자가 개선 ${SELF_IMPROVE_FOCUS} 반영" --body "self-improve guard와 pnpm check 통과 후 자동 머지"
+            gh pr merge "$pr_url" --squash --delete-branch --subject "$title" --body "self-improve guard와 pnpm check 통과 후 자동 merge"
           fi
 
       - name: No changes

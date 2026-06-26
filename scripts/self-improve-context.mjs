@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const root = process.cwd()
@@ -18,16 +18,28 @@ const workflows = existsSync(join(root, '.github', 'workflows'))
   : []
 
 const focus = process.env.SELF_IMPROVE_FOCUS || 'visual'
+const instruction = process.env.SELF_IMPROVE_INSTRUCTION || ''
+const recentCommits = git('log', '--oneline', '-8')
+const status = git('status', '--short')
+const backlog = tryRead(join(root, 'self-improvement', 'backlog.md')).slice(0, 5000)
+const design = tryRead(join(root, 'DESIGN.md')).slice(0, 4000)
+const readme = tryRead(join(root, 'README.md')).slice(0, 4000)
+
 const summary = [
-  `# ${project.name} 자가 개선 컨텍스트`,
+  `# ${project.name} self-improvement context`,
   '',
-  `- 초점: ${focus}`,
-  `- 저장소 유형: ${project.kind}`,
-  `- 런타임: ${project.runtime}`,
-  `- 기본 언어: 한국어`,
-  `- 제품 목표: ${project.goal}`,
-  `- 허용 변경 범위: ${project.allowedChangeScope.join(', ')}`,
-  `- 금지 변경 범위: ${project.blockedChangeScope.join(', ')}`,
+  `- focus: ${focus}`,
+  `- instruction: ${instruction || '없음'}`,
+  `- repository kind: ${project.kind}`,
+  `- runtime: ${project.runtime}`,
+  `- primary language: ${project.language || 'ko'}`,
+  `- product goal: ${project.goal}`,
+  `- allowed change scope: ${project.allowedChangeScope.join(', ')}`,
+  `- blocked change scope: ${project.blockedChangeScope.join(', ')}`,
+  `- quality gates: ${(project.qualityGates || ['pnpm check']).join(', ')}`,
+  '',
+  '## safe improvement backlog',
+  backlog || '- backlog 없음',
   '',
   '## package scripts',
   '```json',
@@ -37,11 +49,20 @@ const summary = [
   '## workflow files',
   workflows.map((name) => `- ${name}`).join('\n') || '- 없음',
   '',
+  '## recent commits',
+  recentCommits || '- 없음',
+  '',
+  '## working tree status before loop',
+  status || '- clean',
+  '',
   '## tracked files',
-  files.slice(0, 220).map((name) => `- ${name}`).join('\n'),
+  files.slice(0, 240).map((name) => `- ${name}`).join('\n'),
+  '',
+  '## DESIGN.md excerpt',
+  design || '- 없음',
   '',
   '## README excerpt',
-  tryRead(join(root, 'README.md')).slice(0, 4000),
+  readme || '- 없음',
 ].join('\n')
 
 writeFileSync(join(outDir, 'context.md'), summary)
@@ -49,14 +70,29 @@ writeFileSync(join(outDir, 'context.md'), summary)
 const prompt = [
   summary,
   '',
-  '## 요청',
-  `이번 실행에서는 "${focus}" 관점에서 가장 작고 안전한 개선 하나만 수행하라.`,
-  '가능한 개선 예: 한국어 문구 보강, 접근성 속성 추가, CSS 정리, 데모 데이터 정리, 안전한 workflow 개선, README 정확도 개선.',
-  '런타임 secret, 실제 외부 API 키, 배포 credential, 사용자 개인정보는 절대 추가하지 말라.',
-  'pnpm check가 통과하도록 변경하라.',
+  '## request',
+  `이번 실행에서는 "${focus}" 관점에서 가장 작고 안전하며 검증 가능한 개선 하나만 수행하라.`,
+  instruction ? `추가 지시사항: ${instruction}` : '추가 지시사항: 없음',
   '',
-  '## 출력 형식',
-  'unified git diff만 출력하라. 예:',
+  '가능한 개선 예시:',
+  '- 기능 기획/설계 루프: backlog, DESIGN.md, README, 샘플 데이터, 접근성 상태 문구 개선',
+  '- visual/design 루프: 밝은 디자인 시스템 기준을 유지하는 작은 UI/CSS 개선',
+  '- workflow 루프: 권한 상승 없이 guard, context, 문서, 검증 메시지 개선',
+  '- accessibility/performance 루프: semantic markup, aria label, reduced motion, lazy/sizing 개선',
+  '',
+  '금지:',
+  '- secret, 실제 토큰, credential, 개인 정보 추가',
+  '- .env, .npmrc, private key, 인증서 파일 추가',
+  '- 위험한 workflow 패턴 추가',
+  '- 허용 범위를 벗어난 파일 수정',
+  '- 한 번에 여러 기능을 크게 구현',
+  '',
+  '검증:',
+  '- 변경 후 pnpm check가 통과해야 한다.',
+  '- no-JS 프로젝트는 JavaScript runtime 파일을 추가하지 않는다.',
+  '',
+  '## output format',
+  'unified git diff만 출력하라.',
   'diff --git a/path b/path',
   '--- a/path',
   '+++ b/path',

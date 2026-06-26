@@ -8,9 +8,12 @@ const changed = new Set([
   ...git('ls-files', '--others', '--exclude-standard').split('\n').filter(Boolean),
 ])
 
-const forbiddenPath = /(^|\/)(\.env|\.npmrc|id_rsa|id_dsa|\.ssh|secrets?\.|credentials?|private-key|private_key)|\.(pem|p12|pfx|key)$/i
-const secretPattern = /(ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY|password\s*=\s*["'][^"']+["']|api[_-]?key\s*=\s*["'][^"']+["'])/
-const dangerousWorkflowPattern = /(pull_request_target|id-token:\s*write|permissions:\s*write-all|contents:\s*write-all|secrets\.|curl\s+[^|]+\|\s*(sh|bash)|Invoke-Expression|Set-ExecutionPolicy)/i
+const forbiddenPath =
+  /(^|\/)(\.env|\.npmrc|id_rsa|id_dsa|\.ssh|secrets?\.|credentials?|private-key|private_key)|\.(pem|p12|pfx|key)$/i
+const secretPattern =
+  /(ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY|password\s*=\s*["'][^"']+["']|api[_-]?key\s*=\s*["'][^"']+["'])/
+const dangerousWorkflowPattern =
+  /(pull_request_target|id-token:\s*write|permissions:\s*write-all|contents:\s*write-all|secrets\.|curl\s+[^|]+\|\s*(sh|bash)|Invoke-Expression|Set-ExecutionPolicy)/i
 
 for (const path of changed) {
   if (forbiddenPath.test(path)) {
@@ -23,10 +26,8 @@ for (const path of changed) {
     throw new Error(`secret 패턴 감지로 변경 차단: ${path}`)
   }
 
-  if (/^\.github\/workflows\/.+\.ya?ml$/i.test(path)) {
-    if (dangerousWorkflowPattern.test(content)) {
-      throw new Error(`위험한 workflow 패턴 감지로 변경 차단: ${path}`)
-    }
+  if (/^\.github\/workflows\/.+\.ya?ml$/i.test(path) && dangerousWorkflowPattern.test(content)) {
+    throw new Error(`위험한 workflow 패턴 감지로 변경 차단: ${path}`)
   }
 }
 

@@ -18,8 +18,10 @@ if (!patch.includes('diff --git') || !patch.includes('+++ b/')) {
   process.exit(0)
 }
 
-const forbiddenPath = /(^|\/)(\.env|\.npmrc|id_rsa|id_dsa|\.ssh|secrets?\.|credentials?|private-key|private_key)|\.(pem|p12|pfx|key)$/i
+const forbiddenPath =
+  /(^|\/)(\.env|\.npmrc|id_rsa|id_dsa|\.ssh|secrets?\.|credentials?|private-key|private_key)|\.(pem|p12|pfx|key)$/i
 const paths = [...patch.matchAll(/^diff --git a\/(.+?) b\/(.+)$/gm)].flatMap((match) => [match[1], match[2]])
+
 for (const path of paths) {
   if (forbiddenPath.test(path)) {
     throw new Error(`민감 파일 경로 변경 차단: ${path}`)
