@@ -123,9 +123,9 @@ export default function App() {
             <div className="stage-actions" role="toolbar" aria-label="셰이더 장면 도구">
               <button
                 type="button"
-                title={isPlaying ? '모션 일시정지' : '모션 재생'}
-                aria-label={isPlaying ? '모션 일시정지' : '모션 재생'}
-                aria-pressed={!isPlaying}
+                title={isPlaying ? '모션 켜짐' : '모션 꺼짐'}
+                aria-label="모션"
+                aria-pressed={isPlaying}
                 onClick={() => setIsPlaying((current) => !current)}
               >
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
