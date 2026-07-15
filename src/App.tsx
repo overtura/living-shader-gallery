@@ -25,6 +25,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
+  const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
   const isModified = isSceneTuningModified(activeScene, tuning)
 
@@ -32,6 +33,7 @@ export default function App() {
     const nextScene = getSceneById(nextSceneId)
     setSceneId(nextSceneId)
     setTuning(getSceneTuning(nextScene))
+    setReferenceTuning(null)
   }
 
   const updateTuning = (key: ShaderTuningKey, value: number) => {
@@ -164,8 +166,12 @@ export default function App() {
             scene={activeScene}
             tuning={tuning}
             isModified={isModified}
+            referenceTuning={referenceTuning}
             onChange={updateTuning}
             onReset={() => setTuning(getSceneTuning(activeScene))}
+            onApplyPreset={setTuning}
+            onSaveReference={() => setReferenceTuning(tuning)}
+            onRestoreReference={() => referenceTuning && setTuning(referenceTuning)}
           />
         </section>
       </div>
