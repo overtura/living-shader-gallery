@@ -1,6 +1,6 @@
 import { Gauge, Image as ImageIcon, MousePointer2, Pause, Play, RotateCcw, ScanLine, ZoomIn } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
 import { ShaderStage } from './components/ShaderStage'
 import { DEFAULT_SCENE, SCENES, getSceneById, type SceneId } from './scenes'
@@ -27,11 +27,22 @@ export default function App() {
   const [isLowPower, setIsLowPower] = useState(false)
   const [isStaticPreview, setIsStaticPreview] = useState(false)
   const [isCanvasAvailable, setIsCanvasAvailable] = useState(false)
+  const [isCanvasPending, setIsCanvasPending] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
   const isModified = isSceneTuningModified(activeScene, tuning)
-  const isInteractiveCanvas = isCanvasAvailable && !isStaticPreview
+  const isInteractiveCanvas = isCanvasAvailable && !isStaticPreview && !isCanvasPending
+
+  const handleCanvasAvailabilityChange = useCallback((isAvailable: boolean) => {
+    setIsCanvasAvailable(isAvailable)
+    setIsCanvasPending(false)
+  }, [])
+
+  const togglePreviewMode = () => {
+    setIsCanvasPending(isStaticPreview)
+    setIsStaticPreview((current) => !current)
+  }
 
   const selectScene = (nextSceneId: SceneId) => {
     const nextScene = getSceneById(nextSceneId)
@@ -182,7 +193,7 @@ export default function App() {
                 aria-label="정적 보기"
                 aria-pressed={isStaticPreview}
                 disabled={!isCanvasAvailable}
-                onClick={() => setIsStaticPreview((current) => !current)}
+                onClick={togglePreviewMode}
               >
                 <ImageIcon size={17} aria-hidden="true" />
                 <span>정적 보기</span>
@@ -204,22 +215,30 @@ export default function App() {
                 isLowPower={isLowPower}
                 isStaticPreview={isStaticPreview}
                 resetRevision={resetRevision}
-                onAvailabilityChange={setIsCanvasAvailable}
+                onAvailabilityChange={handleCanvasAvailabilityChange}
               />
             </div>
             <div className="viewport-status-rail" role="group" aria-label="현재 뷰포트 상태">
               <div className="viewport-state-list">
                 <span className={isInteractiveCanvas && isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
                   <span aria-hidden="true" />
-                  {isInteractiveCanvas ? (isPlaying ? '재생 중' : '일시정지') : '정적 프리뷰'}
+                  {isInteractiveCanvas ? (isPlaying ? '재생 중' : '일시정지') : isCanvasPending ? '3D 준비 중' : '정적 프리뷰'}
                 </span>
                 <span>
                   <strong>표면</strong>
-                  {isInteractiveCanvas ? (isWireframe ? 'Wireframe' : 'Shader') : '대표 색상'}
+                  {isInteractiveCanvas ? (isWireframe ? 'Wireframe' : 'Shader') : isCanvasPending ? '초기화 중' : '대표 색상'}
                 </span>
                 <span>
                   <strong>품질</strong>
-                  {isInteractiveCanvas ? (isLowPower ? '저부하' : '고품질') : isStaticPreview ? 'WebGL 휴식' : 'WebGL 없음'}
+                  {isInteractiveCanvas
+                    ? isLowPower
+                      ? '저부하'
+                      : '고품질'
+                    : isCanvasPending
+                      ? 'WebGL 준비'
+                      : isStaticPreview
+                        ? 'WebGL 휴식'
+                        : 'WebGL 없음'}
                 </span>
               </div>
               {isInteractiveCanvas ? (
@@ -235,7 +254,9 @@ export default function App() {
                   </span>
                 </p>
               ) : (
-                <p className="viewport-gesture-hint">장면 정보와 조정값 탐색 가능</p>
+                <p className="viewport-gesture-hint">
+                  {isCanvasPending ? '3D 캔버스를 준비하고 있어요' : '장면 정보와 조정값 탐색 가능'}
+                </p>
               )}
             </div>
           </div>

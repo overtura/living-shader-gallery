@@ -260,6 +260,13 @@ export function ShaderStage({
   }, [onAvailabilityChange])
 
   useEffect(() => {
+    if (!isStaticPreview) return
+
+    hasReportedFirstFrameRef.current = false
+    setHasRenderedFrame(false)
+  }, [isStaticPreview])
+
+  useEffect(() => {
     if (isStaticPreview || !isWebGLSupported || hasRenderedFrame || hasRuntimeFailure) return
 
     const timeoutId = window.setTimeout(handleRuntimeFailure, FIRST_FRAME_TIMEOUT_MS)
