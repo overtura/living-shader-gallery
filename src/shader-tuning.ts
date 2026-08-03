@@ -44,7 +44,8 @@ export const getSceneTuning = (scene: Scene): ShaderTuning => ({
   bloom: scene.bloom,
 })
 
+export const areShaderTuningsEqual = (left: ShaderTuning, right: ShaderTuning) =>
+  left.pulseSpeed === right.pulseSpeed && left.warpStrength === right.warpStrength && left.bloom === right.bloom
+
 export const isSceneTuningModified = (scene: Scene, tuning: ShaderTuning) =>
-  scene.pulseSpeed !== tuning.pulseSpeed ||
-  scene.warpStrength !== tuning.warpStrength ||
-  scene.bloom !== tuning.bloom
+  !areShaderTuningsEqual(getSceneTuning(scene), tuning)

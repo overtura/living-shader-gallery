@@ -1,8 +1,13 @@
 import { Bookmark, RotateCcw, SlidersHorizontal, Undo2 } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import type { Scene } from '../scenes'
-import { SHADER_TUNING_PRESETS, isSameShaderTuning } from '../shader-presets'
-import { SHADER_TUNING_CONTROLS, type ShaderTuning, type ShaderTuningKey } from '../shader-tuning'
+import { SHADER_TUNING_PRESETS } from '../shader-presets'
+import {
+  SHADER_TUNING_CONTROLS,
+  areShaderTuningsEqual,
+  type ShaderTuning,
+  type ShaderTuningKey,
+} from '../shader-tuning'
 
 type SceneControlPanelProps = {
   scene: Scene
@@ -54,7 +59,7 @@ export function SceneControlPanel({
           </div>
           <div className="preset-list" role="group" aria-label="빠른 렌더 프로필">
             {SHADER_TUNING_PRESETS.map((preset) => {
-              const isActive = isSameShaderTuning(tuning, preset.tuning)
+              const isActive = areShaderTuningsEqual(tuning, preset.tuning)
 
               return (
                 <button

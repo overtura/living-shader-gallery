@@ -27,6 +27,3 @@ export const SHADER_TUNING_PRESETS = [
     tuning: { pulseSpeed: 2.4, warpStrength: 0.12, bloom: 0.58 },
   },
 ] as const satisfies readonly ShaderTuningPreset[]
-
-export const isSameShaderTuning = (left: ShaderTuning, right: ShaderTuning) =>
-  left.pulseSpeed === right.pulseSpeed && left.warpStrength === right.warpStrength && left.bloom === right.bloom
