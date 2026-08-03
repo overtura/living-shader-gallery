@@ -69,7 +69,12 @@ export default function App() {
                 key={scene.id}
                 type="button"
                 className={scene.id === sceneId ? 'active' : ''}
-                style={{ '--scene-accent': scene.accent } as SceneColorStyle}
+                style={
+                  {
+                    '--scene-accent': scene.accent,
+                    '--scene-secondary': scene.secondary,
+                  } as SceneColorStyle
+                }
                 aria-pressed={scene.id === sceneId}
                 onClick={() => selectScene(scene.id)}
               >
