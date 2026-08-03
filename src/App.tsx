@@ -10,6 +10,7 @@ import {
   type ShaderTuning,
   type ShaderTuningKey,
 } from './shader-tuning'
+import { isWebGLAvailable } from './webgl-support'
 
 type SceneColorStyle = CSSProperties & {
   '--scene-accent': string
@@ -25,6 +26,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
   const [isLowPower, setIsLowPower] = useState(false)
+  const [isCanvasAvailable, setIsCanvasAvailable] = useState(isWebGLAvailable)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
@@ -132,6 +134,7 @@ export default function App() {
                 title={isPlaying ? '모션 켜짐' : '모션 꺼짐'}
                 aria-label="모션"
                 aria-pressed={isPlaying}
+                disabled={!isCanvasAvailable}
                 onClick={() => setIsPlaying((current) => !current)}
               >
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
@@ -141,6 +144,7 @@ export default function App() {
                 title="Wireframe 검사"
                 aria-label="Wireframe 검사"
                 aria-pressed={isWireframe}
+                disabled={!isCanvasAvailable}
                 onClick={() => setIsWireframe((current) => !current)}
               >
                 <ScanLine size={18} aria-hidden="true" />
@@ -150,6 +154,7 @@ export default function App() {
                 title={isLowPower ? '저부하 렌더링 끄기' : '저부하 렌더링 켜기'}
                 aria-label="저부하 렌더링"
                 aria-pressed={isLowPower}
+                disabled={!isCanvasAvailable}
                 onClick={() => setIsLowPower((current) => !current)}
               >
                 <Gauge size={18} aria-hidden="true" />
@@ -158,6 +163,7 @@ export default function App() {
                 type="button"
                 title="카메라 시점 초기화"
                 aria-label="카메라 시점 초기화"
+                disabled={!isCanvasAvailable}
                 onClick={() => setResetRevision((revision) => revision + 1)}
               >
                 <RotateCcw size={18} aria-hidden="true" />
@@ -170,11 +176,7 @@ export default function App() {
                 저부하 모드 · 해상도 1× · 후처리 꺼짐
               </p>
             )}
-            <div
-              className="shader-canvas"
-              role="img"
-              aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}. ${isLowPower ? '저부하 렌더링 모드 사용 중' : '일반 렌더링 모드 사용 중'}.`}
-            >
+            <div className="shader-canvas">
               <ShaderStage
                 scene={activeScene}
                 tuning={tuning}
@@ -182,34 +184,39 @@ export default function App() {
                 isWireframe={isWireframe}
                 isLowPower={isLowPower}
                 resetRevision={resetRevision}
+                onAvailabilityChange={setIsCanvasAvailable}
               />
             </div>
             <div className="viewport-status-rail" role="group" aria-label="현재 뷰포트 상태">
               <div className="viewport-state-list">
-                <span className={isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
+                <span className={isCanvasAvailable && isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
                   <span aria-hidden="true" />
-                  {isPlaying ? '재생 중' : '일시정지'}
+                  {isCanvasAvailable ? (isPlaying ? '재생 중' : '일시정지') : '정적 프리뷰'}
                 </span>
                 <span>
                   <strong>표면</strong>
-                  {isWireframe ? 'Wireframe' : 'Shader'}
+                  {isCanvasAvailable ? (isWireframe ? 'Wireframe' : 'Shader') : '대표 색상'}
                 </span>
                 <span>
                   <strong>품질</strong>
-                  {isLowPower ? '저부하' : '고품질'}
+                  {isCanvasAvailable ? (isLowPower ? '저부하' : '고품질') : 'WebGL 없음'}
                 </span>
               </div>
-              <p className="viewport-gesture-hint">
-                <span>
-                  <MousePointer2 size={14} aria-hidden="true" />
-                  드래그 회전
-                </span>
-                <span>
-                  <ZoomIn size={14} aria-hidden="true" />
-                  <span className="desktop-gesture-label">휠 확대</span>
-                  <span className="mobile-gesture-label">핀치 확대</span>
-                </span>
-              </p>
+              {isCanvasAvailable ? (
+                <p className="viewport-gesture-hint">
+                  <span>
+                    <MousePointer2 size={14} aria-hidden="true" />
+                    드래그 회전
+                  </span>
+                  <span>
+                    <ZoomIn size={14} aria-hidden="true" />
+                    <span className="desktop-gesture-label">휠 확대</span>
+                    <span className="mobile-gesture-label">핀치 확대</span>
+                  </span>
+                </p>
+              ) : (
+                <p className="viewport-gesture-hint">장면 정보와 조정값 탐색 가능</p>
+              )}
             </div>
           </div>
           <SceneControlPanel
