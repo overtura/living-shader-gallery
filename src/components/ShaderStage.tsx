@@ -245,7 +245,11 @@ export function ShaderStage({
   }, [])
 
   useEffect(() => {
-    if (previewMode || canvasReadyRef.current) return
+    if (previewMode) {
+      canvasReadyRef.current = false
+      return
+    }
+    if (canvasReadyRef.current) return
 
     initializationTimeoutRef.current = window.setTimeout(onCanvasError, 5000)
     return () => {
