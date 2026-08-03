@@ -92,7 +92,13 @@ function CameraRig({ controlsRef, resetRevision }: CameraRigProps) {
   return null
 }
 
-function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) {
+function ShaderCore({
+  scene,
+  tuning,
+  isPlaying,
+  isWireframe,
+  onCanvasReady,
+}: ShaderCoreProps & { onCanvasReady: () => void }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const groupRef = useRef<THREE.Group>(null)
   const elapsedTimeRef = useRef(0)
@@ -128,7 +134,7 @@ function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) 
   return (
     <group ref={groupRef}>
       <Float speed={isPlaying ? 1.4 : 0} rotationIntensity={isPlaying ? 0.5 : 0} floatIntensity={isPlaying ? 0.8 : 0}>
-        <mesh key={scene.form}>
+        <mesh key={scene.form} onAfterRender={onCanvasReady}>
           <CoreGeometry form={scene.form} />
           <shaderMaterial
             ref={materialRef}
@@ -203,21 +209,8 @@ function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: PreviewM
   )
 }
 
-function CanvasHealthMonitor({
-  onCanvasReady,
-  onCanvasError,
-}: {
-  onCanvasReady: () => void
-  onCanvasError: () => void
-}) {
+function CanvasFailureMonitor({ onCanvasError }: { onCanvasError: () => void }) {
   const gl = useThree((state) => state.gl)
-  const hasRenderedFrameRef = useRef(false)
-
-  useFrame(() => {
-    if (hasRenderedFrameRef.current) return
-    hasRenderedFrameRef.current = true
-    onCanvasReady()
-  })
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -246,6 +239,7 @@ export function ShaderStage({
   const canvasReadyRef = useRef(false)
   const initializationTimeoutRef = useRef<number | null>(null)
   const handleCanvasReady = useCallback(() => {
+    if (canvasReadyRef.current) return
     canvasReadyRef.current = true
     if (initializationTimeoutRef.current !== null) {
       window.clearTimeout(initializationTimeoutRef.current)
@@ -277,10 +271,16 @@ export function ShaderStage({
         <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
         <pointLight position={[3, 4, 5]} intensity={scene.lightPower} color={scene.accent} />
         <pointLight position={[-3, -2, 4]} intensity={5} color={scene.secondary} />
-        <ShaderCore scene={scene} tuning={tuning} isPlaying={isPlaying} isWireframe={isWireframe} />
+        <ShaderCore
+          scene={scene}
+          tuning={tuning}
+          isPlaying={isPlaying}
+          isWireframe={isWireframe}
+          onCanvasReady={handleCanvasReady}
+        />
         <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
         <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
-        <CanvasHealthMonitor onCanvasReady={handleCanvasReady} onCanvasError={onCanvasError} />
+        <CanvasFailureMonitor onCanvasError={onCanvasError} />
         <EffectComposer>
           <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
           <Vignette eskil={false} offset={0.46} darkness={0.12} />
