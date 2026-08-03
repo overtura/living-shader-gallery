@@ -1,4 +1,4 @@
-import { Gauge, Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
+import { Gauge, MousePointer2, Pause, Play, RotateCcw, ScanLine, ZoomIn } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
@@ -178,6 +178,33 @@ export default function App() {
                 isLowPower={isLowPower}
                 resetRevision={resetRevision}
               />
+            </div>
+            <div className="viewport-status-rail" role="group" aria-label="현재 뷰포트 상태">
+              <div className="viewport-state-list">
+                <span className={isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
+                  <span aria-hidden="true" />
+                  {isPlaying ? '재생 중' : '일시정지'}
+                </span>
+                <span>
+                  <strong>표면</strong>
+                  {isWireframe ? 'Wireframe' : 'Shader'}
+                </span>
+                <span>
+                  <strong>품질</strong>
+                  {isLowPower ? '저부하' : '고품질'}
+                </span>
+              </div>
+              <p className="viewport-gesture-hint">
+                <span>
+                  <MousePointer2 size={14} aria-hidden="true" />
+                  드래그 회전
+                </span>
+                <span>
+                  <ZoomIn size={14} aria-hidden="true" />
+                  <span className="desktop-gesture-label">휠 확대</span>
+                  <span className="mobile-gesture-label">핀치 확대</span>
+                </span>
+              </p>
             </div>
           </div>
           <SceneControlPanel
