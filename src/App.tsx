@@ -159,24 +159,26 @@ export default function App() {
               </button>
             </div>
           </header>
-          <div
-            className="shader-canvas"
-            role="img"
-            aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}.`}
-          >
+          <div className="shader-canvas-frame">
             {isLowPower && (
               <p className="render-mode-status" role="status">
                 저부하 모드 · 해상도 1× · 후처리 꺼짐
               </p>
             )}
-            <ShaderStage
-              scene={activeScene}
-              tuning={tuning}
-              isPlaying={isPlaying}
-              isWireframe={isWireframe}
-              isLowPower={isLowPower}
-              resetRevision={resetRevision}
-            />
+            <div
+              className="shader-canvas"
+              role="img"
+              aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}. ${isLowPower ? '저부하 렌더링 모드 사용 중' : '일반 렌더링 모드 사용 중'}.`}
+            >
+              <ShaderStage
+                scene={activeScene}
+                tuning={tuning}
+                isPlaying={isPlaying}
+                isWireframe={isWireframe}
+                isLowPower={isLowPower}
+                resetRevision={resetRevision}
+              />
+            </div>
           </div>
           <SceneControlPanel
             scene={activeScene}
