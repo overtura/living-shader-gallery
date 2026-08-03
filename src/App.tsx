@@ -1,6 +1,6 @@
-import { Gauge, MousePointer2, Pause, Play, RotateCcw, ScanLine, ZoomIn } from 'lucide-react'
+import { Gauge, Image as ImageIcon, MousePointer2, Pause, Play, RotateCcw, ScanLine, ZoomIn } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
 import { ShaderStage } from './components/ShaderStage'
 import { DEFAULT_SCENE, SCENES, getSceneById, type SceneId } from './scenes'
@@ -25,11 +25,24 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
   const [isLowPower, setIsLowPower] = useState(false)
+  const [isStaticPreview, setIsStaticPreview] = useState(false)
   const [isCanvasAvailable, setIsCanvasAvailable] = useState(false)
+  const [isCanvasPending, setIsCanvasPending] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
   const isModified = isSceneTuningModified(activeScene, tuning)
+  const isInteractiveCanvas = isCanvasAvailable && !isStaticPreview && !isCanvasPending
+
+  const handleCanvasAvailabilityChange = useCallback((isAvailable: boolean) => {
+    setIsCanvasAvailable(isAvailable)
+    setIsCanvasPending(false)
+  }, [])
+
+  const togglePreviewMode = () => {
+    setIsCanvasPending(isStaticPreview)
+    setIsStaticPreview((current) => !current)
+  }
 
   const selectScene = (nextSceneId: SceneId) => {
     const nextScene = getSceneById(nextSceneId)
@@ -133,7 +146,7 @@ export default function App() {
                 title={isPlaying ? '모션 켜짐' : '모션 꺼짐'}
                 aria-label="모션"
                 aria-pressed={isPlaying}
-                disabled={!isCanvasAvailable}
+                disabled={!isInteractiveCanvas}
                 onClick={() => setIsPlaying((current) => !current)}
               >
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
@@ -143,7 +156,7 @@ export default function App() {
                 title="Wireframe 검사"
                 aria-label="Wireframe 검사"
                 aria-pressed={isWireframe}
-                disabled={!isCanvasAvailable}
+                disabled={!isInteractiveCanvas}
                 onClick={() => setIsWireframe((current) => !current)}
               >
                 <ScanLine size={18} aria-hidden="true" />
@@ -153,7 +166,7 @@ export default function App() {
                 title={isLowPower ? '저부하 렌더링 끄기' : '저부하 렌더링 켜기'}
                 aria-label="저부하 렌더링"
                 aria-pressed={isLowPower}
-                disabled={!isCanvasAvailable}
+                disabled={!isInteractiveCanvas}
                 onClick={() => setIsLowPower((current) => !current)}
               >
                 <Gauge size={18} aria-hidden="true" />
@@ -162,15 +175,33 @@ export default function App() {
                 type="button"
                 title="카메라 시점 초기화"
                 aria-label="카메라 시점 초기화"
-                disabled={!isCanvasAvailable}
+                disabled={!isInteractiveCanvas}
                 onClick={() => setResetRevision((revision) => revision + 1)}
               >
                 <RotateCcw size={18} aria-hidden="true" />
               </button>
+              <button
+                type="button"
+                className="preview-mode-toggle"
+                title={
+                  !isCanvasAvailable
+                    ? '3D 캔버스를 사용할 수 없어 정적 프리뷰를 표시합니다'
+                    : isStaticPreview
+                      ? '인터랙티브 3D 캔버스로 돌아갑니다'
+                      : 'WebGL을 쉬게 하고 장면의 색과 형태만 확인합니다'
+                }
+                aria-label="정적 보기"
+                aria-pressed={isStaticPreview}
+                disabled={!isCanvasAvailable}
+                onClick={togglePreviewMode}
+              >
+                <ImageIcon size={17} aria-hidden="true" />
+                <span>정적 보기</span>
+              </button>
             </div>
           </header>
           <div className="shader-canvas-frame">
-            {isLowPower && (
+            {isLowPower && isInteractiveCanvas && (
               <p className="render-mode-status" role="status">
                 저부하 모드 · 해상도 1× · 후처리 꺼짐
               </p>
@@ -182,26 +213,35 @@ export default function App() {
                 isPlaying={isPlaying}
                 isWireframe={isWireframe}
                 isLowPower={isLowPower}
+                isStaticPreview={isStaticPreview}
                 resetRevision={resetRevision}
-                onAvailabilityChange={setIsCanvasAvailable}
+                onAvailabilityChange={handleCanvasAvailabilityChange}
               />
             </div>
             <div className="viewport-status-rail" role="group" aria-label="현재 뷰포트 상태">
               <div className="viewport-state-list">
-                <span className={isCanvasAvailable && isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
+                <span className={isInteractiveCanvas && isPlaying ? 'viewport-live is-playing' : 'viewport-live'}>
                   <span aria-hidden="true" />
-                  {isCanvasAvailable ? (isPlaying ? '재생 중' : '일시정지') : '정적 프리뷰'}
+                  {isInteractiveCanvas ? (isPlaying ? '재생 중' : '일시정지') : isCanvasPending ? '3D 준비 중' : '정적 프리뷰'}
                 </span>
                 <span>
                   <strong>표면</strong>
-                  {isCanvasAvailable ? (isWireframe ? 'Wireframe' : 'Shader') : '대표 색상'}
+                  {isInteractiveCanvas ? (isWireframe ? 'Wireframe' : 'Shader') : isCanvasPending ? '초기화 중' : '대표 색상'}
                 </span>
                 <span>
                   <strong>품질</strong>
-                  {isCanvasAvailable ? (isLowPower ? '저부하' : '고품질') : 'WebGL 없음'}
+                  {isInteractiveCanvas
+                    ? isLowPower
+                      ? '저부하'
+                      : '고품질'
+                    : isCanvasPending
+                      ? 'WebGL 준비'
+                      : isStaticPreview
+                        ? 'WebGL 휴식'
+                        : 'WebGL 없음'}
                 </span>
               </div>
-              {isCanvasAvailable ? (
+              {isInteractiveCanvas ? (
                 <p className="viewport-gesture-hint">
                   <span>
                     <MousePointer2 size={14} aria-hidden="true" />
@@ -214,7 +254,9 @@ export default function App() {
                   </span>
                 </p>
               ) : (
-                <p className="viewport-gesture-hint">장면 정보와 조정값 탐색 가능</p>
+                <p className="viewport-gesture-hint">
+                  {isCanvasPending ? '3D 캔버스를 준비하고 있어요' : '장면 정보와 조정값 탐색 가능'}
+                </p>
               )}
             </div>
           </div>

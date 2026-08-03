@@ -1,7 +1,7 @@
 import { Float, Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
-import { MonitorOff } from 'lucide-react'
+import { Image as ImageIcon, MonitorOff } from 'lucide-react'
 import {
   Component,
   type ComponentRef,
@@ -29,6 +29,7 @@ type ShaderCoreProps = {
 
 type ShaderStageProps = Omit<ShaderCoreProps, 'onFirstFrame'> & {
   isLowPower: boolean
+  isStaticPreview: boolean
   resetRevision: number
   onAvailabilityChange: (isAvailable: boolean) => void
 }
@@ -46,6 +47,8 @@ type ShaderStageErrorBoundaryProps = PropsWithChildren<{
 type ShaderStageErrorBoundaryState = {
   hasError: boolean
 }
+
+type ShaderFallbackReason = 'manual' | 'unavailable'
 
 const INITIAL_CAMERA = {
   position: [0, 0, 5] as [number, number, number],
@@ -71,19 +74,22 @@ class ShaderStageErrorBoundary extends Component<ShaderStageErrorBoundaryProps, 
   }
 }
 
-function ShaderFallback({ scene }: { scene: Scene }) {
+function ShaderFallback({ scene, reason }: { scene: Scene; reason: ShaderFallbackReason }) {
+  const isManualPreview = reason === 'manual'
+
   return (
     <div className="shader-fallback" role="status">
       <div className="shader-fallback-preview" aria-hidden="true" />
       <div className="shader-fallback-copy">
         <p className="eyebrow">정적 장면 프리뷰</p>
-        <h3>3D 미리보기를 열 수 없어요</h3>
+        <h3>{isManualPreview ? '장면을 가볍게 살펴보고 있어요' : '3D 미리보기를 열 수 없어요'}</h3>
         <p>
-          <strong>{scene.name}</strong>의 대표 색상입니다. 장면 정보와 조정값은 계속 살펴볼 수 있어요.
+          <strong>{scene.name}</strong>의 대표 색상입니다.{' '}
+          {isManualPreview ? 'WebGL을 쉬는 동안에도 장면 정보와 조정값을 살펴볼 수 있어요.' : '장면 정보와 조정값은 계속 살펴볼 수 있어요.'}
         </p>
         <span className="shader-fallback-hint">
-          <MonitorOff size={15} aria-hidden="true" />
-          하드웨어 가속 확인 후 새로고침
+          {isManualPreview ? <ImageIcon size={15} aria-hidden="true" /> : <MonitorOff size={15} aria-hidden="true" />}
+          {isManualPreview ? '상단 정적 보기 버튼으로 3D 복귀' : '하드웨어 가속 확인 후 새로고침'}
         </span>
       </div>
     </div>
@@ -225,6 +231,7 @@ export function ShaderStage({
   isPlaying,
   isWireframe,
   isLowPower,
+  isStaticPreview,
   resetRevision,
   onAvailabilityChange,
 }: ShaderStageProps) {
@@ -234,7 +241,7 @@ export function ShaderStage({
   const [hasRenderedFrame, setHasRenderedFrame] = useState(false)
   const [hasRuntimeFailure, setHasRuntimeFailure] = useState(false)
   const isWebGLSupported = isWebGLAvailable()
-  const fallback = <ShaderFallback scene={scene} />
+  const fallback = <ShaderFallback scene={scene} reason="unavailable" />
 
   const handleRuntimeFailure = useCallback(() => {
     if (hasRuntimeFailureRef.current) return
@@ -253,11 +260,20 @@ export function ShaderStage({
   }, [onAvailabilityChange])
 
   useEffect(() => {
-    if (!isWebGLSupported || hasRenderedFrame || hasRuntimeFailure) return
+    if (!isStaticPreview) return
+
+    hasReportedFirstFrameRef.current = false
+    setHasRenderedFrame(false)
+  }, [isStaticPreview])
+
+  useEffect(() => {
+    if (isStaticPreview || !isWebGLSupported || hasRenderedFrame || hasRuntimeFailure) return
 
     const timeoutId = window.setTimeout(handleRuntimeFailure, FIRST_FRAME_TIMEOUT_MS)
     return () => window.clearTimeout(timeoutId)
-  }, [handleRuntimeFailure, hasRenderedFrame, hasRuntimeFailure, isWebGLSupported])
+  }, [handleRuntimeFailure, hasRenderedFrame, hasRuntimeFailure, isStaticPreview, isWebGLSupported])
+
+  if (isStaticPreview) return <ShaderFallback scene={scene} reason="manual" />
 
   if (!isWebGLSupported || hasRuntimeFailure) return fallback
 
