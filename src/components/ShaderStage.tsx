@@ -186,11 +186,8 @@ function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: PreviewM
   const isErrorFallback = reason === 'error'
 
   return (
-    <div className={`static-preview static-preview--${scene.form}`}>
-      <div className="static-preview-visual" aria-hidden="true">
-        <span className="static-preview-orbit" />
-        <span className="static-preview-form" />
-      </div>
+    <div className="static-preview">
+      <span className="static-preview-form" aria-hidden="true" />
       <div className="static-preview-copy">
         <span>{reason === 'unsupported' ? 'WebGL 대체 화면' : isErrorFallback ? '3D 오류 대체 화면' : '정적 보기'}</span>
         <strong>{scene.name}</strong>

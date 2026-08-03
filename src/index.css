@@ -328,110 +328,30 @@ input:focus-visible {
 
 .static-preview {
   min-height: 100%;
-  position: relative;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  isolation: isolate;
-  background: radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--scene-accent) 15%, transparent),
-      transparent 31%
-    ),
-    radial-gradient(circle at 62% 56%, color-mix(in srgb, var(--scene-secondary) 13%, transparent), transparent 36%),
+  align-content: center;
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle, color-mix(in srgb, var(--scene-accent) 14%, transparent), transparent 48%),
     var(--color-bg);
 }
 
-.static-preview-visual {
-  width: min(54vw, 360px);
-  aspect-ratio: 1;
-  position: relative;
-  display: grid;
-  place-items: center;
-}
-
-.static-preview-orbit {
-  width: 92%;
-  height: 42%;
-  position: absolute;
-  border: 1px solid color-mix(in srgb, var(--scene-accent) 32%, transparent);
-  border-radius: 50%;
-  transform: rotate(-14deg);
-}
-
-.static-preview-orbit::after {
-  width: 7px;
-  height: 7px;
-  position: absolute;
-  top: 12%;
-  right: 12%;
-  border-radius: 50%;
-  background: var(--scene-secondary);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--scene-secondary) 64%, transparent);
-  content: '';
-}
-
 .static-preview-form {
-  width: 54%;
+  width: min(34vw, 126px);
   aspect-ratio: 1;
-  position: relative;
   display: block;
-  background: conic-gradient(
-    from 210deg,
-    color-mix(in srgb, var(--scene-accent) 74%, white),
-    var(--scene-secondary),
-    color-mix(in srgb, var(--scene-accent) 82%, var(--color-text)),
-    color-mix(in srgb, var(--scene-accent) 74%, white)
-  );
-  box-shadow: 0 28px 70px color-mix(in srgb, var(--scene-accent) 22%, transparent),
-    inset -18px -20px 34px rgb(16 32 51 / 14%), inset 16px 12px 28px rgb(255 255 255 / 44%);
-}
-
-.static-preview--icosahedron .static-preview-form {
+  background: linear-gradient(145deg, var(--scene-accent), var(--scene-secondary));
+  box-shadow: 0 24px 58px color-mix(in srgb, var(--scene-accent) 24%, transparent);
   clip-path: polygon(50% 0%, 92% 23%, 100% 66%, 69% 100%, 27% 92%, 0% 54%, 12% 18%);
   transform: rotate(-8deg);
 }
 
-.static-preview--dodecahedron .static-preview-form {
-  clip-path: polygon(50% 0%, 88% 18%, 100% 57%, 72% 94%, 29% 95%, 0% 58%, 11% 18%);
-  transform: rotate(8deg);
-}
-
-.static-preview--torus .static-preview-form,
-.static-preview--torusKnot .static-preview-form {
-  border-radius: 50%;
-  transform: scaleY(0.72) rotate(-12deg);
-}
-
-.static-preview--torus .static-preview-form::after,
-.static-preview--torusKnot .static-preview-form::after {
-  position: absolute;
-  inset: 28%;
-  border: 1px solid color-mix(in srgb, var(--scene-accent) 20%, var(--color-border));
-  border-radius: 50%;
-  background: var(--color-bg);
-  box-shadow: inset 0 10px 24px color-mix(in srgb, var(--scene-accent) 18%, transparent);
-  content: '';
-}
-
-.static-preview--torusKnot .static-preview-form {
-  border-radius: 42% 58% 46% 54%;
-  transform: rotate(-22deg) scaleY(0.86);
-}
-
 .static-preview-copy {
-  position: absolute;
-  right: 22px;
-  bottom: 22px;
-  left: 22px;
+  max-width: 380px;
   display: grid;
-  justify-items: start;
-  padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--scene-accent) 24%, var(--color-border));
-  border-radius: var(--radius-frame);
-  background: var(--color-surface-strong);
-  box-shadow: 0 12px 36px color-mix(in srgb, var(--scene-accent) 12%, transparent);
-  backdrop-filter: blur(10px);
+  justify-items: center;
 }
 
 .static-preview-copy > span {
