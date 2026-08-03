@@ -14,6 +14,7 @@ type ShaderCoreProps = {
 }
 
 type ShaderStageProps = ShaderCoreProps & {
+  isLowPower: boolean
   resetRevision: number
 }
 
@@ -146,12 +147,13 @@ export function ShaderStage({
   tuning,
   isPlaying,
   isWireframe,
+  isLowPower,
   resetRevision,
 }: ShaderStageProps) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
 
   return (
-    <Canvas camera={INITIAL_CAMERA} dpr={CANVAS_PIXEL_RATIO}>
+    <Canvas camera={INITIAL_CAMERA} dpr={isLowPower ? 1 : CANVAS_PIXEL_RATIO}>
       <color attach="background" args={CANVAS_BACKGROUND} />
       <ambientLight intensity={0.95} />
       <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
@@ -160,10 +162,12 @@ export function ShaderStage({
       <ShaderCore scene={scene} tuning={tuning} isPlaying={isPlaying} isWireframe={isWireframe} />
       <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
       <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
-      <EffectComposer>
-        <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
-        <Vignette eskil={false} offset={0.46} darkness={0.12} />
-      </EffectComposer>
+      {!isLowPower && (
+        <EffectComposer>
+          <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
+          <Vignette eskil={false} offset={0.46} darkness={0.12} />
+        </EffectComposer>
+      )}
     </Canvas>
   )
 }
