@@ -337,6 +337,19 @@ input:focus-visible {
   cursor: pointer;
 }
 
+.stage-actions .preview-mode-toggle {
+  width: auto;
+  grid-auto-flow: column;
+  gap: 6px;
+  padding-inline: 10px;
+}
+
+.preview-mode-toggle span {
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .stage-actions button:hover,
 .stage-actions button[aria-pressed='true'] {
   color: var(--scene-accent);
@@ -770,6 +783,12 @@ input:focus-visible {
 
   .stage-toolbar {
     align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stage-actions {
+    margin-left: auto;
   }
 
   .stage-toolbar p:last-child {
