@@ -1,6 +1,6 @@
 import { Image as ImageIcon, Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
 import { ShaderStage } from './components/ShaderStage'
 import { DEFAULT_SCENE, SCENES, getSceneById, type SceneId } from './scenes'
@@ -45,12 +45,14 @@ export default function App() {
   const [isWireframe, setIsWireframe] = useState(false)
   const [isStaticPreview, setIsStaticPreview] = useState(false)
   const [isWebGLAvailable] = useState(supportsWebGL)
+  const [hasCanvasFailed, setHasCanvasFailed] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
   const isModified = isSceneTuningModified(activeScene, tuning)
-  const previewMode = !isWebGLAvailable ? 'unsupported' : isStaticPreview ? 'manual' : null
+  const previewMode = !isWebGLAvailable ? 'unsupported' : hasCanvasFailed ? 'error' : isStaticPreview ? 'manual' : null
   const usesStaticPreview = previewMode !== null
+  const handleCanvasError = useCallback(() => setHasCanvasFailed(true), [])
 
   const selectScene = (nextSceneId: SceneId) => {
     const nextScene = getSceneById(nextSceneId)
@@ -179,13 +181,15 @@ export default function App() {
                 title={
                   !isWebGLAvailable
                     ? '이 환경에서는 WebGL 대신 정적 미리보기를 표시합니다'
+                    : hasCanvasFailed
+                      ? '3D 캔버스 오류로 정적 미리보기를 표시합니다'
                     : isStaticPreview
                       ? '인터랙티브 3D 캔버스로 돌아갑니다'
                       : 'WebGL을 쉬게 하고 장면의 색과 형태만 확인합니다'
                 }
                 aria-label="정적 보기"
                 aria-pressed={usesStaticPreview}
-                disabled={!isWebGLAvailable}
+                disabled={!isWebGLAvailable || hasCanvasFailed}
                 onClick={() => setIsStaticPreview((current) => !current)}
               >
                 <ImageIcon size={17} aria-hidden="true" />
@@ -211,6 +215,7 @@ export default function App() {
               isWireframe={isWireframe}
               previewMode={previewMode}
               resetRevision={resetRevision}
+              onCanvasError={handleCanvasError}
             />
           </div>
           <SceneControlPanel

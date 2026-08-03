@@ -1,7 +1,16 @@
 import { Float, Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
-import { type ComponentRef, type RefObject, useEffect, useMemo, useRef } from 'react'
+import {
+  Component,
+  type ComponentRef,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react'
 import * as THREE from 'three'
 import type { Scene, SceneForm } from '../scenes'
 import type { ShaderTuning } from '../shader-tuning'
@@ -14,8 +23,33 @@ type ShaderCoreProps = {
 }
 
 type ShaderStageProps = ShaderCoreProps & {
-  previewMode: 'manual' | 'unsupported' | null
+  previewMode: PreviewMode | null
   resetRevision: number
+  onCanvasError: () => void
+}
+
+type PreviewMode = 'manual' | 'unsupported' | 'error'
+
+type CanvasErrorBoundaryProps = {
+  children: ReactNode
+  fallback: ReactNode
+  onError: () => void
+}
+
+class CanvasErrorBoundary extends Component<CanvasErrorBoundaryProps, { hasError: boolean }> {
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch() {
+    this.props.onError()
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
 }
 
 type CameraRigProps = {
@@ -142,7 +176,9 @@ function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) 
   )
 }
 
-function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: 'manual' | 'unsupported' }) {
+function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: PreviewMode }) {
+  const isErrorFallback = reason === 'error'
+
   return (
     <div className={`static-preview static-preview--${scene.form}`}>
       <div className="static-preview-visual" aria-hidden="true">
@@ -150,11 +186,13 @@ function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: 'manual'
         <span className="static-preview-form" />
       </div>
       <div className="static-preview-copy">
-        <span>{reason === 'unsupported' ? 'WebGL 대체 화면' : '정적 보기'}</span>
+        <span>{reason === 'unsupported' ? 'WebGL 대체 화면' : isErrorFallback ? '3D 오류 대체 화면' : '정적 보기'}</span>
         <strong>{scene.name}</strong>
         <p>
           {reason === 'unsupported'
             ? '이 환경에서는 3D 캔버스 대신 장면의 팔레트와 형태를 보여드려요.'
+            : isErrorFallback
+              ? '3D 장면을 표시하지 못해 장면의 팔레트와 형태를 대신 보여드려요.'
             : 'WebGL을 잠시 쉬고 장면의 팔레트와 형태를 가볍게 확인하고 있어요.'}
         </p>
         <small>
@@ -165,6 +203,36 @@ function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: 'manual'
   )
 }
 
+function CanvasHealthMonitor({
+  onCanvasReady,
+  onCanvasError,
+}: {
+  onCanvasReady: () => void
+  onCanvasError: () => void
+}) {
+  const gl = useThree((state) => state.gl)
+  const hasRenderedFrameRef = useRef(false)
+
+  useFrame(() => {
+    if (hasRenderedFrameRef.current) return
+    hasRenderedFrameRef.current = true
+    onCanvasReady()
+  })
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    const handleContextLost = (event: Event) => {
+      event.preventDefault()
+      onCanvasError()
+    }
+
+    canvas.addEventListener('webglcontextlost', handleContextLost)
+    return () => canvas.removeEventListener('webglcontextlost', handleContextLost)
+  }, [gl, onCanvasError])
+
+  return null
+}
+
 export function ShaderStage({
   scene,
   tuning,
@@ -172,27 +240,52 @@ export function ShaderStage({
   isWireframe,
   previewMode,
   resetRevision,
+  onCanvasError,
 }: ShaderStageProps) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
+  const canvasReadyRef = useRef(false)
+  const initializationTimeoutRef = useRef<number | null>(null)
+  const handleCanvasReady = useCallback(() => {
+    canvasReadyRef.current = true
+    if (initializationTimeoutRef.current !== null) {
+      window.clearTimeout(initializationTimeoutRef.current)
+      initializationTimeoutRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (previewMode || canvasReadyRef.current) return
+
+    initializationTimeoutRef.current = window.setTimeout(onCanvasError, 5000)
+    return () => {
+      if (initializationTimeoutRef.current !== null) {
+        window.clearTimeout(initializationTimeoutRef.current)
+        initializationTimeoutRef.current = null
+      }
+    }
+  }, [onCanvasError, previewMode])
 
   if (previewMode) {
     return <StaticShaderPreview scene={scene} reason={previewMode} />
   }
 
   return (
-    <Canvas camera={INITIAL_CAMERA} dpr={CANVAS_PIXEL_RATIO}>
-      <color attach="background" args={CANVAS_BACKGROUND} />
-      <ambientLight intensity={0.95} />
-      <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
-      <pointLight position={[3, 4, 5]} intensity={scene.lightPower} color={scene.accent} />
-      <pointLight position={[-3, -2, 4]} intensity={5} color={scene.secondary} />
-      <ShaderCore scene={scene} tuning={tuning} isPlaying={isPlaying} isWireframe={isWireframe} />
-      <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
-      <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
-      <EffectComposer>
-        <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
-        <Vignette eskil={false} offset={0.46} darkness={0.12} />
-      </EffectComposer>
-    </Canvas>
+    <CanvasErrorBoundary fallback={<StaticShaderPreview scene={scene} reason="error" />} onError={onCanvasError}>
+      <Canvas camera={INITIAL_CAMERA} dpr={CANVAS_PIXEL_RATIO}>
+        <color attach="background" args={CANVAS_BACKGROUND} />
+        <ambientLight intensity={0.95} />
+        <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
+        <pointLight position={[3, 4, 5]} intensity={scene.lightPower} color={scene.accent} />
+        <pointLight position={[-3, -2, 4]} intensity={5} color={scene.secondary} />
+        <ShaderCore scene={scene} tuning={tuning} isPlaying={isPlaying} isWireframe={isWireframe} />
+        <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
+        <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
+        <CanvasHealthMonitor onCanvasReady={handleCanvasReady} onCanvasError={onCanvasError} />
+        <EffectComposer>
+          <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
+          <Vignette eskil={false} offset={0.46} darkness={0.12} />
+        </EffectComposer>
+      </Canvas>
+    </CanvasErrorBoundary>
   )
 }
