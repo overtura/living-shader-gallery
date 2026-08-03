@@ -10,7 +10,6 @@ import {
   type ShaderTuning,
   type ShaderTuningKey,
 } from './shader-tuning'
-import { isWebGLAvailable } from './webgl-support'
 
 type SceneColorStyle = CSSProperties & {
   '--scene-accent': string
@@ -26,7 +25,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
   const [isLowPower, setIsLowPower] = useState(false)
-  const [isCanvasAvailable, setIsCanvasAvailable] = useState(isWebGLAvailable)
+  const [isCanvasAvailable, setIsCanvasAvailable] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
