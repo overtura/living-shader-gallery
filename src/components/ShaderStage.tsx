@@ -1,26 +1,50 @@
 import { Float, Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
-import { type ComponentRef, type RefObject, useEffect, useMemo, useRef } from 'react'
+import { MonitorOff } from 'lucide-react'
+import {
+  Component,
+  type ComponentRef,
+  type PropsWithChildren,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import * as THREE from 'three'
 import type { Scene, SceneForm } from '../scenes'
 import type { ShaderTuning } from '../shader-tuning'
+import { isWebGLAvailable } from '../webgl-support'
 
 type ShaderCoreProps = {
   scene: Scene
   tuning: ShaderTuning
   isPlaying: boolean
   isWireframe: boolean
+  onFirstFrame: () => void
 }
 
-type ShaderStageProps = ShaderCoreProps & {
+type ShaderStageProps = Omit<ShaderCoreProps, 'onFirstFrame'> & {
   isLowPower: boolean
   resetRevision: number
+  onAvailabilityChange: (isAvailable: boolean) => void
 }
 
 type CameraRigProps = {
   controlsRef: RefObject<ComponentRef<typeof OrbitControls> | null>
   resetRevision: number
+}
+
+type ShaderStageErrorBoundaryProps = PropsWithChildren<{
+  fallback: ReactNode
+  onError: () => void
+}>
+
+type ShaderStageErrorBoundaryState = {
+  hasError: boolean
 }
 
 const INITIAL_CAMERA = {
@@ -29,6 +53,42 @@ const INITIAL_CAMERA = {
 }
 const CANVAS_PIXEL_RATIO: [number, number] = [1, 1.75]
 const CANVAS_BACKGROUND: [string] = ['#f7fbff']
+const FIRST_FRAME_TIMEOUT_MS = 3000
+
+class ShaderStageErrorBoundary extends Component<ShaderStageErrorBoundaryProps, ShaderStageErrorBoundaryState> {
+  state: ShaderStageErrorBoundaryState = { hasError: false }
+
+  static getDerivedStateFromError(): ShaderStageErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  componentDidCatch() {
+    this.props.onError()
+  }
+
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
+}
+
+function ShaderFallback({ scene }: { scene: Scene }) {
+  return (
+    <div className="shader-fallback" role="status">
+      <div className="shader-fallback-preview" aria-hidden="true" />
+      <div className="shader-fallback-copy">
+        <p className="eyebrow">정적 장면 프리뷰</p>
+        <h3>3D 미리보기를 열 수 없어요</h3>
+        <p>
+          <strong>{scene.name}</strong>의 대표 색상입니다. 장면 정보와 조정값은 계속 살펴볼 수 있어요.
+        </p>
+        <span className="shader-fallback-hint">
+          <MonitorOff size={15} aria-hidden="true" />
+          하드웨어 가속 확인 후 새로고침
+        </span>
+      </div>
+    </div>
+  )
+}
 
 function CoreGeometry({ form }: { form: SceneForm }) {
   switch (form) {
@@ -58,7 +118,24 @@ function CameraRig({ controlsRef, resetRevision }: CameraRigProps) {
   return null
 }
 
-function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) {
+function CanvasRuntimeGuard({ onContextLost }: { onContextLost: () => void }) {
+  const { gl } = useThree()
+
+  useEffect(() => {
+    const canvas = gl.domElement
+    const handleContextLost = (event: Event) => {
+      event.preventDefault()
+      onContextLost()
+    }
+
+    canvas.addEventListener('webglcontextlost', handleContextLost)
+    return () => canvas.removeEventListener('webglcontextlost', handleContextLost)
+  }, [gl, onContextLost])
+
+  return null
+}
+
+function ShaderCore({ scene, tuning, isPlaying, isWireframe, onFirstFrame }: ShaderCoreProps) {
   const materialRef = useRef<THREE.ShaderMaterial>(null)
   const groupRef = useRef<THREE.Group>(null)
   const elapsedTimeRef = useRef(0)
@@ -94,7 +171,7 @@ function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) 
   return (
     <group ref={groupRef}>
       <Float speed={isPlaying ? 1.4 : 0} rotationIntensity={isPlaying ? 0.5 : 0} floatIntensity={isPlaying ? 0.8 : 0}>
-        <mesh key={scene.form}>
+        <mesh key={scene.form} onAfterRender={onFirstFrame}>
           <CoreGeometry form={scene.form} />
           <shaderMaterial
             ref={materialRef}
@@ -149,25 +226,72 @@ export function ShaderStage({
   isWireframe,
   isLowPower,
   resetRevision,
+  onAvailabilityChange,
 }: ShaderStageProps) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
+  const hasReportedFirstFrameRef = useRef(false)
+  const hasRuntimeFailureRef = useRef(false)
+  const [hasRenderedFrame, setHasRenderedFrame] = useState(false)
+  const [hasRuntimeFailure, setHasRuntimeFailure] = useState(false)
+  const isWebGLSupported = isWebGLAvailable()
+  const fallback = <ShaderFallback scene={scene} />
+
+  const handleRuntimeFailure = useCallback(() => {
+    if (hasRuntimeFailureRef.current) return
+
+    hasRuntimeFailureRef.current = true
+    onAvailabilityChange(false)
+    setHasRuntimeFailure(true)
+  }, [onAvailabilityChange])
+
+  const handleFirstFrame = useCallback(() => {
+    if (hasReportedFirstFrameRef.current || hasRuntimeFailureRef.current) return
+
+    hasReportedFirstFrameRef.current = true
+    setHasRenderedFrame(true)
+    onAvailabilityChange(true)
+  }, [onAvailabilityChange])
+
+  useEffect(() => {
+    if (!isWebGLSupported || hasRenderedFrame || hasRuntimeFailure) return
+
+    const timeoutId = window.setTimeout(handleRuntimeFailure, FIRST_FRAME_TIMEOUT_MS)
+    return () => window.clearTimeout(timeoutId)
+  }, [handleRuntimeFailure, hasRenderedFrame, hasRuntimeFailure, isWebGLSupported])
+
+  if (!isWebGLSupported || hasRuntimeFailure) return fallback
 
   return (
-    <Canvas camera={INITIAL_CAMERA} dpr={isLowPower ? 1 : CANVAS_PIXEL_RATIO}>
-      <color attach="background" args={CANVAS_BACKGROUND} />
-      <ambientLight intensity={0.95} />
-      <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
-      <pointLight position={[3, 4, 5]} intensity={scene.lightPower} color={scene.accent} />
-      <pointLight position={[-3, -2, 4]} intensity={5} color={scene.secondary} />
-      <ShaderCore scene={scene} tuning={tuning} isPlaying={isPlaying} isWireframe={isWireframe} />
-      <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
-      <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
-      {!isLowPower && (
-        <EffectComposer>
-          <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
-          <Vignette eskil={false} offset={0.46} darkness={0.12} />
-        </EffectComposer>
-      )}
-    </Canvas>
+    <ShaderStageErrorBoundary fallback={fallback} onError={handleRuntimeFailure}>
+      <Canvas
+        camera={INITIAL_CAMERA}
+        dpr={isLowPower ? 1 : CANVAS_PIXEL_RATIO}
+        role="img"
+        aria-label={`${scene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}. ${isLowPower ? '저부하 렌더링 모드 사용 중' : '일반 렌더링 모드 사용 중'}.`}
+        fallback={fallback}
+      >
+        <color attach="background" args={CANVAS_BACKGROUND} />
+        <ambientLight intensity={0.95} />
+        <directionalLight position={[4, 6, 5]} intensity={2.4} color="#ffffff" />
+        <pointLight position={[3, 4, 5]} intensity={scene.lightPower} color={scene.accent} />
+        <pointLight position={[-3, -2, 4]} intensity={5} color={scene.secondary} />
+        <ShaderCore
+          scene={scene}
+          tuning={tuning}
+          isPlaying={isPlaying}
+          isWireframe={isWireframe}
+          onFirstFrame={handleFirstFrame}
+        />
+        <OrbitControls ref={controlsRef} enablePan={false} minDistance={3.5} maxDistance={7} />
+        <CameraRig controlsRef={controlsRef} resetRevision={resetRevision} />
+        <CanvasRuntimeGuard onContextLost={handleRuntimeFailure} />
+        {!isLowPower && (
+          <EffectComposer>
+            <Bloom intensity={tuning.bloom} luminanceThreshold={0.32} luminanceSmoothing={0.28} />
+            <Vignette eskil={false} offset={0.46} darkness={0.12} />
+          </EffectComposer>
+        )}
+      </Canvas>
+    </ShaderStageErrorBoundary>
   )
 }
