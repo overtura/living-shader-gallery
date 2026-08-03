@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
+import { Image as ImageIcon, Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
@@ -19,15 +19,38 @@ type SceneColorStyle = CSSProperties & {
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+let webGLSupport: boolean | undefined
+
+const supportsWebGL = () => {
+  if (webGLSupport !== undefined) return webGLSupport
+  if (typeof document === 'undefined') return false
+
+  try {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl')
+
+    context?.getExtension('WEBGL_lose_context')?.loseContext()
+    webGLSupport = Boolean(context)
+    return webGLSupport
+  } catch {
+    webGLSupport = false
+    return webGLSupport
+  }
+}
+
 export default function App() {
   const [sceneId, setSceneId] = useState<SceneId>(DEFAULT_SCENE.id)
   const [tuning, setTuning] = useState<ShaderTuning>(() => getSceneTuning(DEFAULT_SCENE))
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
+  const [isStaticPreview, setIsStaticPreview] = useState(false)
+  const [isWebGLAvailable] = useState(supportsWebGL)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
   const isModified = isSceneTuningModified(activeScene, tuning)
+  const previewMode = !isWebGLAvailable ? 'unsupported' : isStaticPreview ? 'manual' : null
+  const usesStaticPreview = previewMode !== null
 
   const selectScene = (nextSceneId: SceneId) => {
     const nextScene = getSceneById(nextSceneId)
@@ -123,9 +146,10 @@ export default function App() {
             <div className="stage-actions" role="toolbar" aria-label="셰이더 장면 도구">
               <button
                 type="button"
-                title={isPlaying ? '모션 켜짐' : '모션 꺼짐'}
+                title={usesStaticPreview ? '3D 보기에서 사용할 수 있습니다' : isPlaying ? '모션 켜짐' : '모션 꺼짐'}
                 aria-label="모션"
                 aria-pressed={isPlaying}
+                disabled={usesStaticPreview}
                 onClick={() => setIsPlaying((current) => !current)}
               >
                 {isPlaying ? <Pause size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
@@ -135,6 +159,7 @@ export default function App() {
                 title="Wireframe 검사"
                 aria-label="Wireframe 검사"
                 aria-pressed={isWireframe}
+                disabled={usesStaticPreview}
                 onClick={() => setIsWireframe((current) => !current)}
               >
                 <ScanLine size={18} aria-hidden="true" />
@@ -143,22 +168,48 @@ export default function App() {
                 type="button"
                 title="카메라 시점 초기화"
                 aria-label="카메라 시점 초기화"
+                disabled={usesStaticPreview}
                 onClick={() => setResetRevision((revision) => revision + 1)}
               >
                 <RotateCcw size={18} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="preview-mode-toggle"
+                title={
+                  !isWebGLAvailable
+                    ? '이 환경에서는 WebGL 대신 정적 미리보기를 표시합니다'
+                    : isStaticPreview
+                      ? '인터랙티브 3D 캔버스로 돌아갑니다'
+                      : 'WebGL을 쉬게 하고 장면의 색과 형태만 확인합니다'
+                }
+                aria-label="정적 보기"
+                aria-pressed={usesStaticPreview}
+                disabled={!isWebGLAvailable}
+                onClick={() => setIsStaticPreview((current) => !current)}
+              >
+                <ImageIcon size={17} aria-hidden="true" />
+                <span>정적 보기</span>
               </button>
             </div>
           </header>
           <div
             className="shader-canvas"
-            role="img"
-            aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}.`}
+            role={usesStaticPreview ? 'status' : 'img'}
+            aria-label={
+              usesStaticPreview
+                ? `${activeScene.name} 정적 미리보기. WebGL을 사용하지 않고 장면의 색과 형태를 표시합니다.`
+                : `${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${
+                    isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'
+                  }.`
+            }
           >
             <ShaderStage
               scene={activeScene}
               tuning={tuning}
               isPlaying={isPlaying}
               isWireframe={isWireframe}
+              previewMode={previewMode}
               resetRevision={resetRevision}
             />
           </div>

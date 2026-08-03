@@ -14,6 +14,7 @@ type ShaderCoreProps = {
 }
 
 type ShaderStageProps = ShaderCoreProps & {
+  previewMode: 'manual' | 'unsupported' | null
   resetRevision: number
 }
 
@@ -141,14 +142,42 @@ function ShaderCore({ scene, tuning, isPlaying, isWireframe }: ShaderCoreProps) 
   )
 }
 
+function StaticShaderPreview({ scene, reason }: { scene: Scene; reason: 'manual' | 'unsupported' }) {
+  return (
+    <div className={`static-preview static-preview--${scene.form}`}>
+      <div className="static-preview-visual" aria-hidden="true">
+        <span className="static-preview-orbit" />
+        <span className="static-preview-form" />
+      </div>
+      <div className="static-preview-copy">
+        <span>{reason === 'unsupported' ? 'WebGL 대체 화면' : '정적 보기'}</span>
+        <strong>{scene.name}</strong>
+        <p>
+          {reason === 'unsupported'
+            ? '이 환경에서는 3D 캔버스 대신 장면의 팔레트와 형태를 보여드려요.'
+            : 'WebGL을 잠시 쉬고 장면의 팔레트와 형태를 가볍게 확인하고 있어요.'}
+        </p>
+        <small>
+          {scene.palette} · {scene.motion}
+        </small>
+      </div>
+    </div>
+  )
+}
+
 export function ShaderStage({
   scene,
   tuning,
   isPlaying,
   isWireframe,
+  previewMode,
   resetRevision,
 }: ShaderStageProps) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
+
+  if (previewMode) {
+    return <StaticShaderPreview scene={scene} reason={previewMode} />
+  }
 
   return (
     <Canvas camera={INITIAL_CAMERA} dpr={CANVAS_PIXEL_RATIO}>
