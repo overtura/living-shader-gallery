@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
+import { Gauge, Pause, Play, RotateCcw, ScanLine } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { SceneControlPanel } from './components/SceneControlPanel'
@@ -24,6 +24,7 @@ export default function App() {
   const [tuning, setTuning] = useState<ShaderTuning>(() => getSceneTuning(DEFAULT_SCENE))
   const [isPlaying, setIsPlaying] = useState(() => !prefersReducedMotion())
   const [isWireframe, setIsWireframe] = useState(false)
+  const [isLowPower, setIsLowPower] = useState(false)
   const [resetRevision, setResetRevision] = useState(0)
   const [referenceTuning, setReferenceTuning] = useState<ShaderTuning | null>(null)
   const activeScene = getSceneById(sceneId)
@@ -141,6 +142,15 @@ export default function App() {
               </button>
               <button
                 type="button"
+                title={isLowPower ? '저부하 렌더링 끄기' : '저부하 렌더링 켜기'}
+                aria-label="저부하 렌더링"
+                aria-pressed={isLowPower}
+                onClick={() => setIsLowPower((current) => !current)}
+              >
+                <Gauge size={18} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
                 title="카메라 시점 초기화"
                 aria-label="카메라 시점 초기화"
                 onClick={() => setResetRevision((revision) => revision + 1)}
@@ -149,18 +159,26 @@ export default function App() {
               </button>
             </div>
           </header>
-          <div
-            className="shader-canvas"
-            role="img"
-            aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}.`}
-          >
-            <ShaderStage
-              scene={activeScene}
-              tuning={tuning}
-              isPlaying={isPlaying}
-              isWireframe={isWireframe}
-              resetRevision={resetRevision}
-            />
+          <div className="shader-canvas-frame">
+            {isLowPower && (
+              <p className="render-mode-status" role="status">
+                저부하 모드 · 해상도 1× · 후처리 꺼짐
+              </p>
+            )}
+            <div
+              className="shader-canvas"
+              role="img"
+              aria-label={`${activeScene.name} 3D 미리보기. ${isPlaying ? '모션 재생 중' : '모션 일시정지'}. ${isWireframe ? 'Wireframe 표시 중' : '표면 표시 중'}. ${isLowPower ? '저부하 렌더링 모드 사용 중' : '일반 렌더링 모드 사용 중'}.`}
+            >
+              <ShaderStage
+                scene={activeScene}
+                tuning={tuning}
+                isPlaying={isPlaying}
+                isWireframe={isWireframe}
+                isLowPower={isLowPower}
+                resetRevision={resetRevision}
+              />
+            </div>
           </div>
           <SceneControlPanel
             scene={activeScene}
